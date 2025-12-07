@@ -64,7 +64,30 @@ import json
 from typing import List, Dict
 
 class Logic:
+    def validate_unique_code(self, input_string: str) -> List:
+        clean_string = input_string.strip()
+        if len(clean_string) != 4 or not clean_string.isdigit():
+            return []
+
+        if len(set(clean_string)) < 4:
+            return []
+
+        return [int(n) for n in clean_string]
+
+    def enter_and_verify_code(self, player_name: str, description='PIN') -> List[int]:
+        code = input(f'{player_name}, enter Your 4 unique digit {description} (0 -9): ')
+        validate_code = self.validate_unique_code(code)
+        return validate_code
+
+    def get_player_pin (self, player_name: str) -> List[int]:
+        return self.enter_and_verify_code(player_name, 'PIN')
+
+    def get_player_guess(self, player_name) -> List[int]:
+        return self.enter_and_verify_code(player_name,'GUESS')
+
     def compare_pin_to_guess(self,player: PlayerModel, opponent: PlayerModel) -> Dict:
+        if not player.guess or not opponent.pin:
+            return {}
 
         dead = 0
         for _, (num_a, num_b) in enumerate(zip(player.guess, opponent.pin)):
@@ -77,8 +100,10 @@ class Logic:
 
         return {'dead': dead, 'injured': inj}
 
-    def update_feedback_history(self, player: PlayerModel, feedback: str) -> None:
-        return player.feedback_history.append(feedback)
+    def update_feedback_history(self, player: PlayerModel, feedback: str) -> bool:
+        player.feedback_history.append(feedback)
+        return True
+
 
     def has_won(self, player: PlayerModel, ) -> bool:
         if player.current_feedback['dead'] == 4 and player.current_feedback['injured'] == 4:
@@ -98,7 +123,7 @@ class Logic:
                 record_list = json.load(f)
 
                 if not isinstance(record_list, list):
-                    return []
+                    record_list =  []
 
                 match_found = False
                 for record in record_list:
@@ -109,13 +134,7 @@ class Logic:
                 if not match_found:
                     record_list.append(new_data)
 
-        except FileNotFoundError:
-            with open(file_name, 'w', encoding='utf-8') as f:
-                initial_data =  [new_data]
-
-                json.dump(initial_data, f, indent=4)
-
-        except JSONDecodeError:
+        except (FileNotFoundError, JSONDecodeError):
             record_list = [new_data]
 
         with open(file_name, 'w', encoding='utf-8') as f:
@@ -137,24 +156,7 @@ class Logic:
         except FileNotFoundError:
             print(f'{file_name} not found to induce the ranking functionality')
 
-player_1 = PlayerModel('Donald')
-player_2 = PlayerModel('James')
-player_3 = PlayerModel('John')
 
-player_1.current_feedback = {'dead': 2, 'injured': 1}
-player_2.current_feedback = {'dead': 3, 'injured': 1}
-player_3.current_feedback = {'dead': 4, 'injured': 1}
-
-player_1.guess_count += 2
-player_2.guess_count += 0
-player_3.guess_count += 8
-logic = Logic()
-
-LEADERBOARD_FILE = '../Leaderboard.json'
-logic.save_winner(LEADERBOARD_FILE, player_1)
-logic.save_winner(LEADERBOARD_FILE, player_2)
-logic.save_winner(LEADERBOARD_FILE, player_3)
-logic.rank_winner_by_guess_count(LEADERBOARD_FILE)
 
 
 
