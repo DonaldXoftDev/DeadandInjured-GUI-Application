@@ -74,16 +74,7 @@ class Logic:
 
         return [int(n) for n in clean_string]
 
-    def enter_and_verify_code(self, player_name: str, description='PIN') -> List[int]:
-        code = input(f'{player_name}, enter Your 4 unique digit {description} (0 -9): ')
-        validate_code = self.validate_unique_code(code)
-        return validate_code
 
-    def get_player_pin (self, player_name: str) -> List[int]:
-        return self.enter_and_verify_code(player_name, 'PIN')
-
-    def get_player_guess(self, player_name) -> List[int]:
-        return self.enter_and_verify_code(player_name,'GUESS')
 
     def compare_pin_to_guess(self,player: PlayerModel, opponent: PlayerModel) -> Dict:
         if not player.guess or not opponent.pin:
@@ -105,8 +96,8 @@ class Logic:
         return True
 
 
-    def has_won(self, player: PlayerModel, ) -> bool:
-        if player.current_feedback['dead'] == 4 and player.current_feedback['injured'] == 4:
+    def has_won(self, player: PlayerModel) -> bool:
+        if player.current_feedback.get('dead') == 4 or player.current_feedback.get('injured') == 4:
             return True
         return False
 
