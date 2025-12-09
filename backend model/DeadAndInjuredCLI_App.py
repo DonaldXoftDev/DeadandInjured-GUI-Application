@@ -2,18 +2,39 @@ from player_model import PlayerModel
 from computer_player import  ComputerPlayer
 from feedback_mechanism import Feedback
 from logic import Logic
-import json
+from cli_interface import Interface
 from typing import Dict, List
 
+
 class DeadAndInjuredCLIApp:
-    def __init__(self, player: PlayerModel, opponent: PlayerModel | ComputerPlayer):
-        self.player = player
-        self.opponent = opponent
+    def __init__(self):
+        self.interface = Interface()
+        self.all_players = self.create_players()
+        self.player = self.all_players['player']
+        self.opponent = self.all_players['opponent']
         self.logic = Logic()
         self.LEADERBOARD_FILE = '../leaderboard.json'
 
+    def create_players(self) -> Dict[str, PlayerModel | ComputerPlayer]:
+        is_comp_opponent = self.interface.play_with_comp_prompt()
+
+        if is_comp_opponent.startswith('y'):
+            computer = ComputerPlayer()
+            computer.is_human = False
+            self.interface.display_message('You are playing with computer...')
+            player = PlayerModel(self.interface.get_player_name())
+            self.interface.display_message(f'Player {player.name.title()} created...')
+            return {'player': player, 'opponent': computer}
+        else:
+            player = PlayerModel(self.interface.get_player_name())
+            self.interface.display_message(f'Player {player.name.title()} created...')
+            opponent = PlayerModel(self.interface.get_player_name())
+            self.interface.display_message(f'Player {opponent.name.title()} created...')
+            return {'player': player, 'opponent': opponent}
+
+
     def enter_and_verify_code(self, player_name: str, description='PIN') -> List[int]:
-        code = input(f'{player_name}, enter Your 4 unique digit {description} (0 -9): ')
+        code = self.interface.get_code_input(player_name, description)
         validate_code = self.logic.validate_unique_code(code)
         return validate_code
 
@@ -26,56 +47,106 @@ class DeadAndInjuredCLIApp:
     def initialize_player_pins(self):
         player_pin = self.get_player_pin(self.player.name.title())
         if not player_pin:
-            print('Invalid pin entered')
+            self.interface.display_error_message('Invalid pin entered.')
             return False
 
         self.player.pin = player_pin
-        print(f'{self.player.name.title()} has chosen a valid pin...\n')
+        self.interface.display_message(f'{self.player.name.title()} has chosen a valid pin...')
 
         if not self.opponent.is_human:
             self.opponent.computer_pin()
-            print(f'{self.opponent.name.title()} has generated a valid pin...\n')
+            self.interface.display_message(f'{self.opponent.name.title()} has generated a valid pin...')
             return True
 
         else:
             opponent_pin = self.get_player_pin(self.opponent.name.title())
             if not opponent_pin:
-                print('Invalid pin entered\n')
+                self.interface.display_error_message('Invalid pin entered.')
                 return False
 
             self.opponent.pin = opponent_pin
-            print(f'{self.opponent.name.title()} has chosen a valid pin...\n')
+            self.interface.display_message(f'{self.opponent.name.title()} has chosen a valid pin...')
             return True
 
-    def simulate_player_guessing(self,player: PlayerModel | ComputerPlayer, opponent: PlayerModel | ComputerPlayer):
-
-        player_guess = self.get_player_guess(player.name.title())
-        if not player_guess:
-            print('Invalid guess entered\n')
-            return False
-
-        player.guess = player_guess
-        print(f'{player.name.title()} has guessed picked a guess...\n')
+    def simulate_player_guessing(self,valid_guess: List[int],player: PlayerModel | ComputerPlayer,
+                                 opponent: PlayerModel | ComputerPlayer):
+        player.guess = valid_guess
+        self.interface.display_message(f'{player.name.title()} has guessed...{player.guess}\n')
 
         player_feedback_data = self.logic.compare_pin_to_guess(player, opponent)
         if not player_feedback_data:
-            print(f'A problem occurred comparing {player.name.title()} guess to {opponent.name.title()} pin')
+            self.interface.display_error_message(f'A problem occurred comparing {player.name.title()} '
+                                                 f'guess to {opponent.name.title()} pin')
             return False
 
         player.current_feedback = player_feedback_data
-        print(player.current_feedback)
 
         player_feedback_message = Feedback(player_feedback_data).feedback_result()
-        print(f'Feedback to {player.name.title()} after comparison is {player_feedback_message}')
+        self.interface.display_message(f'Feedback to {player.name.title()}'
+                                       f' after comparison is {player_feedback_message}')
 
         self.logic.update_feedback_history(player, feedback=player_feedback_message)
-        print(player.feedback_history)
 
         if self.logic.has_won(player):
+            self.interface.display_message(f'{player.name.title()} has won!')
+            self.interface.display_message(f'Adding {player.name.title()} to the leaderboard...')
             self.logic.save_winner(self.LEADERBOARD_FILE,player)
-            self.logic.rank_winner_by_guess_count(self.LEADERBOARD_FILE)
+            self.logic.rank_winner_by_guess_count(self.LEADERBOARD_FILE  )
             return True
         return False
+
+    def computer_guessing_strategy(self) -> None:
+        computer = self.opponent
+        dummy_computer = ComputerPlayer()
+
+        new_possible_list = []
+        for poss_pin in computer.possible_pin_list:
+            dummy_computer.pin = poss_pin
+
+            temp_feedback_data = self.logic.compare_pin_to_guess(computer, dummy_computer)
+
+            if (computer.current_feedback['dead'] == temp_feedback_data['dead']
+                and computer.current_feedback['injured'] == temp_feedback_data['injured']):
+                new_possible_list.append(poss_pin)
+
+        computer.possible_pin_list = new_possible_list
+
+
+    def handle_computer_turn(self):
+        valid_guess = self.opponent.computer_guess()
+
+        is_win = self.simulate_player_guessing(
+            valid_guess=valid_guess,
+            player=self.opponent,
+            opponent=self.opponent
+        )
+
+        if is_win:
+            return True
+
+        self.computer_guessing_strategy()
+
+        self.interface.display_message(f'possible list length is now: {len(self.opponent.possible_pin_list)}\n')
+        return False
+
+    def handle_player_turn(self, player: PlayerModel | ComputerPlayer, opponent: PlayerModel | ComputerPlayer) -> bool:
+        valid_guess = self.get_player_guess(player.name.title())
+
+        if not valid_guess:
+            self.interface.display_error_message('Invalid pin entered.\n')
+            return False
+
+        is_win = self.simulate_player_guessing(
+            valid_guess=valid_guess,
+            player=player,
+            opponent=opponent
+        )
+
+        if is_win:
+            return True
+
+        return False
+
 
     def run_cli_game(self):
         entering_pin = True
@@ -86,56 +157,23 @@ class DeadAndInjuredCLIApp:
 
         #main guessing loop
         while True:
-            if not self.simulate_player_guessing(player=self.player, opponent=self.opponent):
+            if not self.handle_player_turn(player=self.player, opponent=self.opponent):
                 pass
             else:
                 break
 
             if not self.opponent.is_human:
-                pass # the computer guessing strategy , breaks when the computer wins
-
-            if not self.simulate_player_guessing(player=self.opponent, opponent=self.player):
-                pass
+               if not self.handle_computer_turn():
+                   continue
             else:
-                break
-
-
-def creating_human_player() -> PlayerModel:
-    entering_name = True
-    new_player = None
-    while entering_name:
-        name = input('Enter your player name: ')
-        if not name:
-            print('Please enter a player name.')
-            continue
-        entering_name = False
-        new_player = PlayerModel(name)
-        print(f'Player {new_player.name.title()} created...\n')
-    return new_player
-
-def create_player() -> Dict[str, PlayerModel | ComputerPlayer]:
-    initial_prompt = input('Do you want to play again comp("y/n"): ').lower()
-    if initial_prompt.startswith('y'):
-        computer_player = ComputerPlayer()
-        computer_player.is_human = False
-        new_player = creating_human_player()
-        return {'player': new_player, 'opponent': computer_player}
-    else:
-        player = creating_human_player()
-        opponent = creating_human_player()
-        return {'player': player, 'opponent': opponent}
-
-
+                if not self.handle_player_turn(player=self.opponent, opponent=self.opponent):
+                    continue
+                else:
+                    break
 
 
 if __name__ == '__main__':
-   players = create_player()
-   player_1 = players['player']
-   player_2 = players['opponent']
-
-
-
-   game_cli_app = DeadAndInjuredCLIApp(player_1, player_2)
+   game_cli_app = DeadAndInjuredCLIApp()
    game_cli_app.run_cli_game()
 
 

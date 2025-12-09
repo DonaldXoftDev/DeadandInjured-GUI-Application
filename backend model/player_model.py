@@ -1,6 +1,7 @@
 import json
 from typing import List, Dict
 
+
 class PlayerModel:
     def __init__(self,name):
         self.name = name

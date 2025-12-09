@@ -21,7 +21,4 @@ class ComputerPlayer(PlayerModel):
         return comp_guess
 
 
-def computer_guess_strategy():
-    pass
-
 
