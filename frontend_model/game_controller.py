@@ -1,4 +1,4 @@
-from models.player_model import PlayerModel
+from backend_models.player_model import PlayerModel
 
 
 class GameController:

@@ -1,5 +1,4 @@
 from json import JSONDecodeError
-from unittest.util import sorted_list_difference
 
 from prettytable import PrettyTable
 import random
@@ -59,7 +58,7 @@ def generate_feedback_table(row_list, name='computer'):
     return table
 
 
-from player_model import PlayerModel
+from backend_models.player_model import PlayerModel
 import json
 from typing import List, Dict
 
@@ -87,13 +86,15 @@ class Logic:
 
         total_shared_digit = len(set(player.guess).intersection(opponent.pin))
         inj = total_shared_digit - dead
-        player.guess_count += 1
 
         return {'dead': dead, 'injured': inj}
 
     def update_feedback_history(self, player: PlayerModel, feedback: str) -> bool:
         player.feedback_history.append(feedback)
         return True
+
+    def update_guess_count(self, player: PlayerModel) -> None:
+        player.guess_count += 1
 
 
     def has_won(self, player: PlayerModel) -> bool:

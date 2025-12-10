@@ -1,5 +1,5 @@
 import random
-from player_model import PlayerModel
+from backend_models.player_model import PlayerModel
 from itertools import permutations
 
 
@@ -16,9 +16,11 @@ class ComputerPlayer(PlayerModel):
 
     def computer_guess(self):
         self.guess.clear()
-        comp_guess = random.choice(self.possible_pin_list)
-        self.guess = comp_guess
-        return comp_guess
+        if len(self.possible_pin_list) != 1:
+            comp_guess = random.choice(self.possible_pin_list)
+            self.guess = comp_guess
+            return comp_guess
+        return self.possible_pin_list[0]
 
 
 

@@ -2,7 +2,7 @@ from logic import *
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import tkinter as tk
-from game_model import GameModel
+from frontend_model.game_model import GameModel
 from frontend_model.game_controller import GameController
 
 

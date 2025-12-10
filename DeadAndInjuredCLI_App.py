@@ -1,7 +1,7 @@
-from player_model import PlayerModel
-from computer_player import  ComputerPlayer
-from feedback_mechanism import Feedback
-from logic import Logic
+from backend_models.player_model import PlayerModel
+from backend_models.computer_player import ComputerPlayer
+from backend_models.feedback_mechanism import  Feedback
+from backend_models.logic import Logic
 from cli_interface import Interface
 from typing import Dict, List
 
@@ -13,7 +13,7 @@ class DeadAndInjuredCLIApp:
         self.player = self.all_players['player']
         self.opponent = self.all_players['opponent']
         self.logic = Logic()
-        self.LEADERBOARD_FILE = '../leaderboard.json'
+        self.LEADERBOARD_FILE = 'leaderboard.json'
 
     def create_players(self) -> Dict[str, PlayerModel | ComputerPlayer]:
         is_comp_opponent = self.interface.play_with_comp_prompt()
@@ -74,6 +74,7 @@ class DeadAndInjuredCLIApp:
         self.interface.display_message(f'{player.name.title()} has guessed...{player.guess}\n')
 
         player_feedback_data = self.logic.compare_pin_to_guess(player, opponent)
+        self.logic.update_guess_count(player)
         if not player_feedback_data:
             self.interface.display_error_message(f'A problem occurred comparing {player.name.title()} '
                                                  f'guess to {opponent.name.title()} pin')
@@ -118,7 +119,7 @@ class DeadAndInjuredCLIApp:
         is_win = self.simulate_player_guessing(
             valid_guess=valid_guess,
             player=self.opponent,
-            opponent=self.opponent
+            opponent=self.player
         )
 
         if is_win:
@@ -164,7 +165,7 @@ class DeadAndInjuredCLIApp:
 
             if not self.opponent.is_human:
                if not self.handle_computer_turn():
-                   continue
+                  continue
             else:
                 if not self.handle_player_turn(player=self.opponent, opponent=self.opponent):
                     continue

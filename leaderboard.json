@@ -10,6 +10,9 @@
     {
         "name": "dessy",
         "guess_count": 2
+    },
+    {
+        "name": "Computer",
+        "guess_count": 7
     }
-
 ]
