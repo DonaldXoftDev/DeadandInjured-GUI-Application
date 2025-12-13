@@ -1,15 +1,13 @@
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import tkinter as tk
-from typing import Protocol, List
+from typing import Protocol, List, Optional
 
 from game_presenter import RequiredDetails
 from name_label_frame import NameLabel
 
 
 class PresenterProtocol(Protocol):
-    def __init__(self):
-        ...
 
     def create_players(self, state):
         ...
@@ -26,7 +24,7 @@ class PresenterProtocol(Protocol):
 
 
 class GameView:
-    def __init__(self, presenter: PresenterProtocol):
+    def __init__(self, presenter: Optional[PresenterProtocol]=None):
         self.window = ttk.Window(themename='superhero')
         self.window.grid(baseWidth=10, baseHeight=10, widthInc=10, heightInc=10)
 
@@ -60,7 +58,8 @@ class GameView:
 
         self.home_frame = self.home_screen()
         self.setup_frame = self.setup_screen()
-        self.code_input_frame = self.code_input_screen(player_name='Donald')
+        self.pin_frame = self.pin_input_screen(player_name='Donald')
+        self.guess_frame = self.guess_input_screen(player_name='Daniel')
         # self.comp_frame = self.comp_screen()
         stats_list = [RequiredDetails('phoebe',None,None),
                       RequiredDetails('jonathan',None,None)]
@@ -71,8 +70,9 @@ class GameView:
 
         # self.home_frame.grid(row=0, column=0, sticky='nsew')
         # self.setup_frame.grid(row=0, column=1, sticky='nsew')
-        # self.code_input_frame.grid(row=0, column=1, sticky='nsew')
-        self.stats_frame.grid(row=0, column=0, sticky='nsew')
+        self.pin_frame.grid(row=0, column=0, sticky='nsew')
+        # self.guess_frame.grid(row=0, column=0, sticky='nsew')
+        # self.stats_frame.grid(row=0, column=0, sticky='nsew')
 
 
     def home_screen(self) -> ttk.Frame:
@@ -184,7 +184,7 @@ class GameView:
         if previous_index >= 0 and not current_var.get():
             self.entry_boxes[previous_index].focus()
 
-    def code_input_screen(self, player_name: str, label: str ='PIN') -> ttk.Frame:
+    def code_input_screen(self, player_name: str, label: str ='BaseCodeLabel') -> ttk.Frame:
         frame = ttk.Frame(self.window, style='TFrame', padding=50)
 
         title_label = ttk.Label(frame, text=f'WELCOME, {player_name} 🤗', style='TLabel')
@@ -234,6 +234,12 @@ class GameView:
 
         return frame
 
+    def pin_input_screen(self, player_name: str, label='PIN'):
+        return self.code_input_screen(player_name, label)
+
+    def guess_input_screen(self, player_name: str, label='GUESS'):
+        return self.code_input_screen(player_name, label)
+
     def comp_screen(self):
         ...
 
@@ -278,7 +284,6 @@ class GameView:
         ...
 
 
-base_presenter = PresenterProtocol
-view = GameView(base_presenter)
+view = GameView()
 view.window.mainloop()
 
