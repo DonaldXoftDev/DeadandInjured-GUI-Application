@@ -1,7 +1,9 @@
-from logic import *
+from backend_models.logic import *
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import tkinter as tk
+
+from backend_models.logic import computer_generate_pin
 from frontend_model.game_model import GameModel
 from frontend_model.game_controller import GameController
 
@@ -206,8 +208,8 @@ class DeadAndInjuredGUI:
         if previous_index >= 0 and not current_var.get():
             self.entry_boxes[previous_index].focus()
 
-    def handle_pin_or_guess_click(self):
-        #
+    # def handle_pin_or_guess_click(self):
+    #     #
         # string_input_from_entry = ''
         # for var in self.entry_vars:
         #     string_input_from_entry += var.get()
@@ -245,14 +247,14 @@ class DeadAndInjuredGUI:
 
 
 
-        title_label = ttk.Label(frame, text=f'WELCOME, {} 🤗', style='TLabel')
+        title_label = ttk.Label(frame, text=f'WELCOME, {self.player} 🤗', style='TLabel')
         title_label.grid(row=0, column=0,columnspan=3, padx=(10,200), pady=10)
 
         title_rule = ttk.Separator(frame, orient='horizontal')
         title_rule.grid(row=1, column=0, columnspan=4, sticky='ew', padx=10, pady=(10,50))
 
 
-        instruction_label_frame = ttk.LabelFrame(frame, text=f'Enter 4 digit unique {} from 0 to 9',
+        instruction_label_frame = ttk.LabelFrame(frame, text=f'Enter 4 digit unique {label} from 0 to 9',
                                       style='name.TLabelFrame', labelanchor='n')
         instruction_label_frame.grid(row=2, column=0,columnspan=4, padx=10, pady=10)
         instruction_label_frame.grid_columnconfigure(0, weight=1)
@@ -300,7 +302,7 @@ class DeadAndInjuredGUI:
         frame = ttk.Frame(self.main_frame, style='TFrame', padding=100)
         comp_pin = computer_generate_pin()
 
-        pin_label = ttk.Label(frame, text="COMPUTER HAS CHOOSEN PIN", style='TLabel')
+        pin_label = ttk.Label(frame, text="COMPUTER HAS CHOSEN PIN", style='TLabel')
         pin_label.grid(row=0, column=1,columnspan=4, padx=100, pady=40)
 
         is_guessing_label = ttk.Label(frame, text="YOU MUST GUESS", style='TLabel')
@@ -325,7 +327,6 @@ class DeadAndInjuredGUI:
 
         horizontal_divider = ttk.Separator(main_frame, orient='horizontal')
         horizontal_divider.grid(row=1, column=0, columnspan=6, sticky='ew', padx=10, pady=10)
-
 
 
         main_frame.grid_columnconfigure(1, weight=1)
@@ -371,9 +372,8 @@ window= ttk.Window(themename='superhero')
 window.grid(baseWidth=10, baseHeight=10, widthInc=10, heightInc=10)
 
 
-game_model = GameModel()
-
-game_controller = GameController(game_model)
-dead_and_injured_logic = DeadAndInjuredGUI(window, game_controller)
-
-
+# game_model = GameModel()
+#
+# game_controller = GameController(game_model)
+# dead_and_injured_logic = DeadAndInjuredGUI(window, game_controller)
+#

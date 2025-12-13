@@ -3,59 +3,6 @@ from json import JSONDecodeError
 from prettytable import PrettyTable
 import random
 
-def compare_pin_to_guess(g_list, p_list, name='computer') -> dict:
-    if not g_list or not p_list:
-        return {}
-
-    dead = 0
-
-    remaining_guess = []
-
-    for i in range(len(g_list)):
-        if g_list[i] == p_list[i]:
-            dead += 1
-
-        else:
-            remaining_guess.append(g_list[i])
-
-    total_shared_digits = len(set(g_list).intersection(set(p_list)))
-    inj = total_shared_digits - dead
-
-    return {'dead': dead, 'inj': inj, 'name': name}
-
-
-# phase 5
-# computer's guessing strategy
-def computer_guessing_strategy(previous_pins:list, last_guess:list, last_result:dict) -> list:
-    if not previous_pins:
-        return []
-
-    new_possible_pins = []
-    for candidate_pin in previous_pins:
-        test_result = compare_pin_to_guess(last_guess, candidate_pin, 'computer')
-
-        if (last_result['dead'] == test_result['dead'] and
-                last_result['inj'] == test_result['inj']):
-            new_possible_pins.append(candidate_pin)
-
-
-    return new_possible_pins
-
-def computer_generate_pin():
-    return random.sample(range( 10), 4)
-
-def format_list_to_string(list_input):
-    return "".join(str(n) for n in list_input)
-
-
-# Structure feedbacks in a table
-def generate_feedback_table(row_list, name='computer'):
-    table = PrettyTable()
-    table.field_names = [f'{name.title()} guess',f'Feedback to {name.title()}']
-
-    for r in row_list:
-        table.add_row(r)
-    return table
 
 
 from backend_models.player_model import PlayerModel
@@ -103,7 +50,7 @@ class Logic:
         return False
 
 
-    def save_winner(self, file_name: str, winner: PlayerModel):
+    def save_winner(self, file_name: str, winner: PlayerModel) -> None:
         new_data = {
             'name': winner.name,
             'guess_count': winner.guess_count,
@@ -133,7 +80,7 @@ class Logic:
             json.dump(record_list, f, indent=4)
 
 
-    def rank_winner_by_guess_count(self, file_name: str):
+    def rank_winner_by_guess_count(self, file_name: str) -> None:
         try:
 
             with open(file_name, 'r', encoding='utf-8') as f:

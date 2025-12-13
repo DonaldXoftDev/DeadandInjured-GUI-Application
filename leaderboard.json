@@ -1,18 +1,6 @@
 [
     {
-        "name": "donald",
-        "guess_count": 1
-    },
-    {
-        "name": "donny",
-        "guess_count": 2
-    },
-    {
-        "name": "dessy",
-        "guess_count": 2
-    },
-    {
         "name": "Computer",
-        "guess_count": 7
+        "guess_count": 6
     }
 ]

@@ -1,17 +1,19 @@
 import ttkbootstrap as ttk
 import tkinter as tk
+from typing import List, Dict
+
+from game_presenter import RequiredDetails
 
 
-class NameLabelFrame:
-    def __init__(self, master,name, game_logic_instance):
-        self.name = name.upper()
-        self.frame = ttk.LabelFrame(master,text=self.name, labelanchor='nw')
+class NameLabel:
+    def __init__(self, master, details: RequiredDetails):
+        self.details = details
+        self.frame = ttk.LabelFrame(master,text=self.details.name.title(), labelanchor='nw')
 
-        self.pin_vars = self.game_logic.pin_vars
-        self.guess_vars = self.game_logic.guess_vars.guess_vars
-        self.guess_count = self.game_logic.guess_count.guess_count
-        self.count_vars = self.game_logic.count_vars
-        self.guess = self.game_logic.guess.guess
+        self.pin_vars = []
+        self.details.guess = [1,9,3,2]
+        self.guess_vars = []
+        self.count_vars = []
 
 
 
@@ -54,14 +56,14 @@ class NameLabelFrame:
 
     def toggle_switching(self, toggle_var):
         if toggle_var.get():
-            for i, var in enumerate(self.pin_vars):
-                var.set(self.guess[i])
+            for index, var in enumerate(self.pin_vars):
+                var.set(self.details.guess[index])
         else:
-            for i, var in enumerate(self.pin_vars):
+            for var in self.pin_vars:
                 var.set('⚫')
 
     def create_pin_boxes(self,frame, boot_style_color:str, entry_state, style:str, data,
-                         start_row:int,var_list:list, range_count:int):
+                         start_row:int, var_list:list,  range_count:int):
 
         for i in range(range_count):
             box_var = tk.StringVar()
@@ -86,8 +88,6 @@ class NameLabelFrame:
             frame.grid_columnconfigure(i, weight=1)
 
 
-
-
     def create_pin_label_frame(self, parent_frame):
         frame = ttk.LabelFrame(parent_frame,text='YOUR PIN', labelanchor='nw')
 
@@ -107,8 +107,8 @@ class NameLabelFrame:
     def create_guess_label_frame(self,parent_frame):
         frame = ttk.LabelFrame(parent_frame,text='YOUR GUESS', labelanchor='nw')
 
-        self.create_pin_boxes(frame,'primary','readonly','Pin.TEntry', self.guess,
-                              0, var_list=self.guess_vars,range_count=4)
+        self.create_pin_boxes(frame,'primary','readonly','Pin.TEntry', self.details.guess,
+                              0, var_list=self.guess_vars, range_count=4)
 
         return frame
 
@@ -139,7 +139,7 @@ class NameLabelFrame:
     def create_count_frame(self, parent_frame):
         frame = ttk.Frame(parent_frame)
 
-        guess_attempt = str(self.guess_count)
+        guess_attempt = str(self.details.guess_count)
         string_count = len(guess_attempt)
 
         if string_count < 2:
@@ -154,9 +154,10 @@ class NameLabelFrame:
 
 # window = ttk.Window(themename='superhero')
 #
-# player_names = ['donald', 'froster', 'jake']
-# for i in range(len(player_names)):
-#     player_name_label = NameLabelFrame(window, player_names[i])
+# players = [RequiredDetails('donald', state=None, turn=None), RequiredDetails('joe', state=None, turn=None)]
+#
+# for i in range(len(players)):
+#     player_name_label = NameLabelFrame(window, players[i])
 #     player_name_label.frame.grid(row=0, column=i, padx=10, pady=10)
 #
 # window.mainloop()

@@ -1,11 +1,32 @@
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import tkinter as tk
+from typing import Protocol, List
 
+from game_presenter import RequiredDetails
+from name_label_frame import NameLabel
+
+
+class PresenterProtocol(Protocol):
+    def __init__(self):
+        ...
+
+    def create_players(self, state):
+        ...
+
+    def store_player_name(self, name: str):
+        ...
+
+    def store_player_code(self, pin: str):
+        ...
+
+
+    def update_stats(self):
+        ...
 
 
 class GameView:
-    def __init__(self, presenter):
+    def __init__(self, presenter: PresenterProtocol):
         self.window = ttk.Window(themename='superhero')
         self.window.grid(baseWidth=10, baseHeight=10, widthInc=10, heightInc=10)
 
@@ -41,16 +62,20 @@ class GameView:
         self.setup_frame = self.setup_screen()
         self.code_input_frame = self.code_input_screen(player_name='Donald')
         # self.comp_frame = self.comp_screen()
-        # self.stats_frame = self.stats_screen()
+        stats_list = [RequiredDetails('phoebe',None,None),
+                      RequiredDetails('jonathan',None,None)]
+
+        self.stats_frame = self.stats_screen(stats_list)
         # self.game_over_frame = self.game_over_screen()
 
 
         # self.home_frame.grid(row=0, column=0, sticky='nsew')
         # self.setup_frame.grid(row=0, column=1, sticky='nsew')
-        self.code_input_frame.grid(row=0, column=1, sticky='nsew')
+        # self.code_input_frame.grid(row=0, column=1, sticky='nsew')
+        self.stats_frame.grid(row=0, column=0, sticky='nsew')
 
 
-    def home_screen(self):
+    def home_screen(self) -> ttk.Frame:
         frame = ttk.Frame(self.window, padding=40)
 
         title_frame = ttk.Frame(frame)
@@ -91,13 +116,13 @@ class GameView:
 
         return frame
 
-    def enable_btn(self, mode_var, btn):
+    def enable_btn(self, mode_var: tk.StringVar, btn: ttk.Button) -> None:
         if mode_var.get():
             btn.configure(state='enabled')
             # self.controller.create_players(mode_var.get())
 
 
-    def setup_screen(self):
+    def setup_screen(self) -> ttk.Frame:
         frame = ttk.Frame(self.window, style='TFrame', padding=100)
 
         outer_setup_container = ttk.Frame(frame, style='TFrame')
@@ -133,7 +158,7 @@ class GameView:
 
         return frame
 
-    def limit_length_to_1(self,var_to_check):
+    def limit_length_to_1(self,var_to_check: tk.StringVar) -> None:
         if len(var_to_check.get().strip()) > 1:
             var_to_check.set(var_to_check.get().strip()[:1])
 
@@ -142,7 +167,7 @@ class GameView:
 
 
 
-    def jump_to_new_entry(self,event):
+    def jump_to_new_entry(self,event) -> None:
         index = self.entry_boxes.index(event.widget)
         current_var = self.entry_vars[index]
         next_index = index + 1
@@ -151,7 +176,7 @@ class GameView:
             self.entry_boxes[next_index].focus()
 
 
-    def reverse_jump(self,event):
+    def reverse_jump(self,event) -> None:
         index = self.entry_boxes.index(event.widget)
         current_var = self.entry_vars[index]
         previous_index = index - 1
@@ -159,7 +184,7 @@ class GameView:
         if previous_index >= 0 and not current_var.get():
             self.entry_boxes[previous_index].focus()
 
-    def code_input_screen(self, player_name: str, label='PIN'):
+    def code_input_screen(self, player_name: str, label: str ='PIN') -> ttk.Frame:
         frame = ttk.Frame(self.window, style='TFrame', padding=50)
 
         title_label = ttk.Label(frame, text=f'WELCOME, {player_name} 🤗', style='TLabel')
@@ -212,14 +237,48 @@ class GameView:
     def comp_screen(self):
         ...
 
-    def stats_screen(self):
-        ...
+    def stats_screen(self, required_stats: List[RequiredDetails]) -> ttk.Frame:
+
+        frame = ttk.Frame(self.window, style='TFrame')
+
+        main_frame = ttk.Frame(frame, style='TFrame')
+        main_frame.grid(row=0, column=0, padx=10)
+
+        title_label = ttk.Label(main_frame, text="STATS", )
+        title_label.grid(row=0, column=0, padx=(10, 300))
+
+        horizontal_divider = ttk.Separator(main_frame, orient='horizontal')
+        horizontal_divider.grid(row=1, column=0, columnspan=6, sticky='ew', padx=10, pady=10)
+
+        main_frame.grid_columnconfigure(1, weight=1)
+        l_frames = []
+        for i in range(len(required_stats)):
+            name_label_frame = NameLabel(main_frame, required_stats[i])
+            l_frames.append(name_label_frame)
+
+        # labels.pop(0)
+        if len(l_frames) > 1:
+            for i,label in enumerate(l_frames):
+                label.frame.grid(row=2, column=i, padx=10, pady=10)
+                label.frame.grid_columnconfigure(i, weight=1)
+        else:
+            l_frames[0].frame.grid(row=2, column=0, padx=10, pady=10)
+
+        guess_again_btn = ttk.Button(frame, text='GUESS AGAIN', bootstyle='success',
+                                     command=None)
+
+        guess_again_btn.grid(row=3, column=0, padx=50, pady=10)
+
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(0, weight=1)
+
+        return frame
 
     def game_over_screen(self):
         ...
 
 
-
-view = GameView(None)
+base_presenter = PresenterProtocol
+view = GameView(base_presenter)
 view.window.mainloop()
 

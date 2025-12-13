@@ -38,14 +38,14 @@ class DeadAndInjuredCLIApp:
         validate_code = self.logic.validate_unique_code(code)
         return validate_code
 
-    def get_player_pin (self, player_name: str) -> List[int]:
+    def get_verified_pin (self, player_name: str) -> List[int]:
         return self.enter_and_verify_code(player_name, 'PIN')
 
-    def get_player_guess(self, player_name) -> List[int]:
+    def get_verified_guess(self, player_name) -> List[int]:
         return self.enter_and_verify_code(player_name,'GUESS')
 
     def initialize_player_pins(self):
-        player_pin = self.get_player_pin(self.player.name.title())
+        player_pin = self.get_verified_pin(self.player.name.title())
         if not player_pin:
             self.interface.display_error_message('Invalid pin entered.')
             return False
@@ -59,7 +59,7 @@ class DeadAndInjuredCLIApp:
             return True
 
         else:
-            opponent_pin = self.get_player_pin(self.opponent.name.title())
+            opponent_pin = self.get_verified_pin(self.opponent.name.title())
             if not opponent_pin:
                 self.interface.display_error_message('Invalid pin entered.')
                 return False
@@ -74,6 +74,7 @@ class DeadAndInjuredCLIApp:
         self.interface.display_message(f'{player.name.title()} has guessed...{player.guess}\n')
 
         player_feedback_data = self.logic.compare_pin_to_guess(player, opponent)
+        self.interface.display_message(f'You are comparing your guess of {player.guess} to the opponent pin of {opponent.pin}')
         self.logic.update_guess_count(player)
         if not player_feedback_data:
             self.interface.display_error_message(f'A problem occurred comparing {player.name.title()} '
@@ -131,7 +132,7 @@ class DeadAndInjuredCLIApp:
         return False
 
     def handle_player_turn(self, player: PlayerModel | ComputerPlayer, opponent: PlayerModel | ComputerPlayer) -> bool:
-        valid_guess = self.get_player_guess(player.name.title())
+        valid_guess = self.get_verified_guess(player.name.title())
 
         if not valid_guess:
             self.interface.display_error_message('Invalid pin entered.\n')
@@ -158,14 +159,16 @@ class DeadAndInjuredCLIApp:
 
         #main guessing loop
         while True:
+            #TODO: don't forget to handle the conflict of invalid pin and has not won
             if not self.handle_player_turn(player=self.player, opponent=self.opponent):
                 pass
             else:
                 break
 
             if not self.opponent.is_human:
-               if not self.handle_computer_turn():
-                  continue
+                if not self.handle_computer_turn():
+                    continue
+                break
             else:
                 if not self.handle_player_turn(player=self.opponent, opponent=self.opponent):
                     continue

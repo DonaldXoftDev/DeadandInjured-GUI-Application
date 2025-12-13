@@ -1,7 +1,7 @@
 import tkinter as tk
 import ttkbootstrap as ttk
 
-from frontend_model.name_label_frame import NameLabelFrame
+from frontend_model.name_label_frame import NameLabel
 
 
 # --- Placeholder Logic Functions (Required for script to run) ---
@@ -243,7 +243,7 @@ class Trial:
 
         main_frame.grid_columnconfigure(0, weight=1)
         for i in range(3):
-            name_label_frame = NameLabelFrame(main_frame,self.name)
+            name_label_frame = NameLabel(main_frame, self.name)
             name_label_frame.frame.grid(row=2, column=i, padx=10, pady=10)
 
         frame.grid_columnconfigure(0, weight=1)
