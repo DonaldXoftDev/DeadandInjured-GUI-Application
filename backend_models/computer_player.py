@@ -8,6 +8,9 @@ class ComputerPlayer(PlayerModel):
         super().__init__(name='Computer')
         self.possible_pin_list = [list(item) for item in permutations(range(0, 10), 4)]
 
+    def set_as_comp(self) ->None:
+        self.is_human = False
+
     def computer_pin(self):
         pin = random.choice(self.possible_pin_list)
         self.pin = pin

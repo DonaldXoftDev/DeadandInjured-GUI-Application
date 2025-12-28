@@ -68,8 +68,8 @@ class DeadAndInjuredCLIApp:
             self.interface.display_message(f'{self.opponent.name.title()} has chosen a valid pin...')
             return True
 
-    def simulate_player_guessing(self,valid_guess: List[int],player: PlayerModel | ComputerPlayer,
-                                 opponent: PlayerModel | ComputerPlayer):
+    def simulate_player_guessing(self,valid_guess: List[int],player: PlayerModel ,
+                                 opponent: PlayerModel):
         player.guess = valid_guess
         self.interface.display_message(f'{player.name.title()} has guessed...{player.guess}\n')
 

@@ -1,4 +1,5 @@
 from json import JSONDecodeError
+from linecache import clearcache
 
 from prettytable import PrettyTable
 import random
@@ -12,14 +13,25 @@ from typing import List, Dict
 class Logic:
     def validate_unique_code(self, input_string: str) -> List:
         clean_string = input_string.strip()
-        if len(clean_string) != 4 or not clean_string.isdigit():
+        if len(clean_string) != 4 or not self.is_all_digit(clean_string):
             return []
 
-        if len(set(clean_string)) < 4:
+        if not self.is_unique(input_string):
             return []
 
         return [int(n) for n in clean_string]
 
+    def parse_code_as_list(self,input_str):
+        clean_string = input_str.strip()
+        return [int(n) for n in clean_string]
+
+    def is_unique(self,code: str) -> bool:
+        clean_string = code.strip()
+        return len(set(clean_string)) < 4
+
+    def is_all_digit(self, code:str) -> bool:
+        clean_string = code.strip()
+        return clean_string.isdigit()
 
 
     def compare_pin_to_guess(self,player: PlayerModel, opponent: PlayerModel) -> Dict:
