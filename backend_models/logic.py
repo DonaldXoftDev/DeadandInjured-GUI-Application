@@ -1,11 +1,6 @@
 from json import JSONDecodeError
-from linecache import clearcache
 
-from prettytable import PrettyTable
-import random
-
-
-
+from backend_models.computer_player import ComputerPlayer
 from backend_models.player_model import PlayerModel
 import json
 from typing import List, Dict
@@ -109,5 +104,18 @@ class Logic:
 
 
 
+    def computer_guessing_strategy(self, computer: PlayerModel) -> None:
+        dummy_computer = ComputerPlayer()
 
+        new_possible_list = []
+        for poss_pin in computer.possible_pin_list:
+            dummy_computer.pin = poss_pin
+
+            temp_feedback_data =  self.compare_pin_to_guess(computer, dummy_computer)
+
+            if (computer.current_feedback['dead'] == temp_feedback_data['dead']
+                and computer.current_feedback['injured'] == temp_feedback_data['injured']):
+                new_possible_list.append(poss_pin)
+
+        computer.possible_pin_list = new_possible_list
 

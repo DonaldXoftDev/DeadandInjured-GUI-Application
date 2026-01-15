@@ -1,26 +1,20 @@
-from typing import Protocol, AnyStr
+from typing import Protocol
 from backend_models.computer_player import ComputerPlayer
 from backend_models.feedback_mechanism import Feedback
 from backend_models.player_model import PlayerModel
 from backend_models.logic import Logic
 from backend_models.game_data_model import  MainGameModel
+from backend_models.stats_model import StatDetails
+from backend_models.gameover_data_model import GameOverDetails
 
 
-class StatDetails:
-    def __init__(self, turn: PlayerModel):
-        self.player_name:str = turn.name
-        self.player_pin: list[int] = turn.pin
-        self.player_guess: list[int] = turn.guess
-        self.all_player_stats: list[StatDetails]
-        self.player_guess_count: int = turn.guess_count
-        self.feedback_history: list[str] = turn.feedback_history
 
 
 class ViewProtocol(Protocol):
-    def render_new_screen(self, details: StatDetails | str | None = None):
+    def render_new_screen(self, details: StatDetails| GameOverDetails | str | None = None):
         ...
 
-    def display_error_popup(self, message):
+    def display_error_popup(self,label: str, message: str):
         ...
 
     def start(self):
@@ -32,6 +26,7 @@ class GamePresenter:
         self.view = view
         self.Logic = logic
         self.game_model = game_model
+        self.file_name = 'D_n_I_leaderboard.json'
 
 
     def get_next_player(self) -> PlayerModel:
@@ -62,14 +57,15 @@ class GamePresenter:
 
 
     def store_name_sequence(self, name: str):
+        label = 'NAME'
         if not name:
             print('NO name is stored')
             msg = 'The name cannot be empty.'
-            self.view.display_error_popup(msg)
+            self.view.display_error_popup(label,msg)
 
         elif len(name) < 3:
             msg = 'The player name is too short'
-            self.view.display_error_popup(msg)
+            self.view.display_error_popup(label, msg)
 
         else:
             if self.game_model.screen_turn == 0:
@@ -96,17 +92,18 @@ class GamePresenter:
     def pin_submitted_sequence(self, pin: str):
         pin = pin.strip()
         print(pin)
+        label= 'PIN'
         if not pin:
             msg = 'The PIN cannot be empty.'
-            self.view.display_error_popup(msg)
+            self.view.display_error_popup(label, msg)
 
         elif not self.Logic.is_unique(pin):
             msg = 'The PIN is not unique.'
-            self.view.display_error_popup(msg)
+            self.view.display_error_popup(label, msg)
 
         elif not self.Logic.is_all_digit(pin):
             msg = 'The PIN has to be all digits.'
-            self.view.display_error_popup(msg)
+            self.view.display_error_popup(label, msg)
         else:
             valid_pin = self.Logic.parse_code_as_list(pin)
             self.game_model.current_player.update_pin(valid_pin)
@@ -128,40 +125,60 @@ class GamePresenter:
 
     def guess_submitted_sequence(self, guess: str):
         guess = guess.strip()
+        label = 'GUESS'
         if not guess:
             msg = 'The PIN cannot be empty.'
-            self.view.display_error_popup(msg)
+            self.view.display_error_popup(label, msg)
 
         elif not self.Logic.is_unique(guess):
-            msg = 'The PIN is not unique.'
-            self.view.display_error_popup(msg)
+            msg = 'The PIN must be 4 digits and unique.'
+            self.view.display_error_popup(label, msg)
 
         elif not self.Logic.is_all_digit(guess):
             msg = 'The PIN has to be all digits.'
-            self.view.display_error_popup(msg)
+            self.view.display_error_popup(label, msg)
         else:
             valid_guess = self.Logic.parse_code_as_list(guess)
+
             player = self.game_model.current_player
             opponent = self.game_model.players[self.get_next_index()]
 
             #updates the current player's guess
             player.update_guess(valid_guess)
+            player.increment_guess_count()
 
             #returns the result of the comparison of player guess and opponent pin as a dict
             feedback_data = self.Logic.compare_pin_to_guess(player, opponent)
 
+            if not player.is_human:
+                print('the player is computer')
+                self.Logic.computer_guessing_strategy(computer=player)
+
+            print('definitely a human playing!')
             # updates the player's feedback
             player.update_current_feedback(feedback_data)
 
-            #returns a string of the feedback message e.g 1d 2inj
+            #returns a string of the feedback message e.g. 1d 2inj
             feedback_msg = Feedback(feedback_data).feedback_result()
             player.update_feed_back_history(feedback_msg)
 
+            if self.Logic.has_won(player):
+                self.game_model.current_screen = 'GAME_OVER'
+                game_over_details = GameOverDetails(winner=player, loser=opponent)
+                print('wow, shocked you won!')
+                self.Logic.save_winner(self.file_name, winner=player)
+                self.Logic.rank_winner_by_guess_count(self.file_name)
+                self.view.render_new_screen(game_over_details)
 
-            self.game_model.screen_turn += 1
+            else:
+                self.game_model.current_screen = 'STATS_SCREEN'
+                stats_details = StatDetails(player)
+                self.view.render_new_screen(stats_details)
+                print('This should happen')
 
-            if self.game_model.screen_turn < len(self.game_model.players) and all(p.is_human for p in self.game_model.players):
-                pass
+
+
+
 
 
     def guess_again_sequence(self):

@@ -2,8 +2,11 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import tkinter as tk
 from typing import Protocol
+from tkinter.messagebox import showinfo, showerror,showwarning
 from backend_models.game_data_model import  MainGameModel
-from game_presenter import StatDetails
+from game_presenter import StatDetails, GameOverDetails
+
+
 # from name_label_frame import NameLabel
 
 
@@ -316,8 +319,8 @@ class GameView:
         ...
 
     #methods callable by the presenter reference
-    def display_error_popup(self, message):
-        pass
+    def display_error_popup(self, label: str , message: str):
+        showwarning(title=f'INAVLID {label}', message=message)
 
     def update_code_frame_content(self, player_name: str,  screen_type: str):
         if self.pin_title_label is None or self.guess_title_label is None:
@@ -344,7 +347,7 @@ class GameView:
             self.prompt_label_frame.configure(text=new_text)
 
 
-    def render_new_screen(self, details: StatDetails | str  | None = None):
+    def render_new_screen(self, details: StatDetails |GameOverDetails | str  | None = None):
         self.home_frame.grid_forget()
         self.setup_frame.grid_forget()
         self.pin_frame.grid_forget()
@@ -365,6 +368,8 @@ class GameView:
             self.update_code_frame_content(details.player_name, screen_type)
             self.guess_frame.grid(row=0, column=0, sticky='nsew')
 
+        elif self.game_model.current_screen == 'STATS_SCREEN':
+            pass
         elif self.game_model.current_screen == 'GAME_OVER':
             pass
 
