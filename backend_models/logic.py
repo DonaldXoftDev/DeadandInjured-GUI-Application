@@ -27,7 +27,7 @@ class Logic:
 
     def is_unique(self,code: str) -> bool:
         clean_string = code.strip()
-        return len(set(clean_string)) < 4
+        return len(set(clean_string)) == 4
 
     def is_all_digit(self, code:str) -> bool:
         clean_string = code.strip()

@@ -2,7 +2,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import tkinter as tk
 from typing import Protocol
-from backend_models.main_game_model import  MainGameModel
+from backend_models.game_data_model import  MainGameModel
 from game_presenter import StatDetails
 # from name_label_frame import NameLabel
 
@@ -15,10 +15,10 @@ class PresenterProtocol(Protocol):
     def store_name_sequence(self, name: str):
         ...
 
-    def store_pin_sequence(self, pin: str):
+    def pin_submitted_sequence(self, pin: str):
         ...
 
-    def store_guess_sequence(self, guess: str):
+    def guess_submitted_sequence(self, guess: str):
         ...
 
     def guess_again_sequence(self):
@@ -60,9 +60,18 @@ class GameView:
         self.pin_title_label = None
         self.guess_title_label = None
         self.box_entry = None
+        self.prompt_label_frame = None
         self.ui_player_index  = 0
-        self.player_mode = None
+        self.COUNT = 0
 
+        #all game_vars for simulating the screen transition
+        self.player_mode = None
+        self.name_var = None
+        self.name_enty = None
+        self.pin_var = None
+        self.pin_enty = None
+        self.guess_var = None
+        self.guess_enty = None
 
 
         self.home_frame = self.home_screen()
@@ -148,19 +157,21 @@ class GameView:
         horiz_rule = ttk.Separator(outer_setup_container, orient='horizontal')
         horiz_rule.grid(row=1, column=0, columnspan=3, sticky='ew', padx=10, pady=(10, 50))
 
-        prompt_label_frame = ttk.LabelFrame(outer_setup_container, text=f'Player{self.ui_player_index},ENTER A PLAYER NAME', labelanchor='n')
-        prompt_label_frame.grid(row=2, column=1, columnspan=4, padx=10, pady=10)
+        self.prompt_label_frame = ttk.LabelFrame(outer_setup_container, text=f'PLAYER{self.ui_player_index}, ENTER A PLAYER NAME', labelanchor='n')
+        self.prompt_label_frame.grid(row=2, column=1, columnspan=4, padx=10, pady=10)
 
-        input_frame = ttk.Frame(prompt_label_frame, style='TFrame')
+        input_frame = ttk.Frame(self.prompt_label_frame, style='TFrame')
         input_frame.grid(row=0, column=0, sticky='nsew', padx=70, pady=10)
         input_frame.grid_columnconfigure(0, weight=1)
 
-        var = tk.StringVar()
-        name_entry = ttk.Entry(input_frame, textvariable=var, width=10, style='TEntry')
+        name_var = tk.StringVar()
+        self.name_var = name_var
+        name_entry = ttk.Entry(input_frame, textvariable=name_var, width=10, style='TEntry')
+        self.name_entry = name_entry
         name_entry.grid(row=0, column=1, padx=10, pady=30)
         name_entry.focus_set()
 
-        submit_name_btn = ttk.Button(input_frame, text="SUBMIT", bootstyle='danger',command= None, padding=[40, 10])
+        submit_name_btn = ttk.Button(input_frame, text="SUBMIT", bootstyle='danger',command= self.name_entered, padding=[40, 10])
 
         submit_name_btn.grid(row=1, column=1, padx=10, pady=10)
 
@@ -195,7 +206,7 @@ class GameView:
         if previous_index >= 0 and not current_var.get():
             self.entry_boxes[previous_index].focus()
 
-    def code_input_screen(self, screen_type: str , label: str ='BaseCodeLabel') -> ttk.Frame:
+    def code_input_screen(self, screen_type: str , label: str ='BaseCodeLabel', command_on_click= None) -> ttk.Frame:
         frame = ttk.Frame(self.window, style='TFrame', padding=50)
 
         if screen_type.lower() == 'pin':
@@ -243,19 +254,20 @@ class GameView:
 
         self.entry_boxes[0].focus()
         submit_digits_btn = ttk.Button(entry_frame, text=f"CONFIRM {label.upper()}", bootstyle=SUCCESS,
-                                       command=None, padding=[50, 10])
+                                       command=command_on_click, padding=[50, 10])
         submit_digits_btn.grid(row=1, column=0, columnspan=4, sticky='ew', padx=100, pady=40)
 
         return frame
 
     def pin_input_screen(self, label='PIN'):
         type: str = label.lower()
-        return self.code_input_screen(type, label)
+        command = self.pin_submitted
+        return self.code_input_screen(type, label, command_on_click=command)
 
     def guess_input_screen(self,label: str ='GUESS'):
         type: str = label.lower()
-        return self.code_input_screen(type, label)
-
+        command = self.guess_submitted
+        return self.code_input_screen(type, label, command_on_click=command)
 
 
     def stats_screen(self, required_stats: list[StatDetails] | None = None) -> ttk.Frame:
@@ -322,6 +334,15 @@ class GameView:
 
         # self.entry_boxes[0].focus()
 
+    def update_name_setup_index(self):
+        if self.prompt_label_frame is None:
+            print('Error; The name frame is still None')
+
+        else:
+            self.ui_player_index += 1
+            new_text = f'PLAYER{self.ui_player_index}, ENTER A PLAYER NAME'
+            self.prompt_label_frame.configure(text=new_text)
+
 
     def render_new_screen(self, details: StatDetails | str  | None = None):
         self.home_frame.grid_forget()
@@ -329,25 +350,23 @@ class GameView:
         self.pin_frame.grid_forget()
         self.guess_frame.grid_forget()
 
-        if isinstance(details, dict):
-           pass
-        else:
-            if self.game_model.current_screen == 'NAME_SETUP':
-                self.ui_player_index += 1
-                self.setup_frame.grid(row=0, column=0, sticky='nsew')
+        # not sure if i should validate the details for emptiness
+        if self.game_model.current_screen == 'NAME_SETUP':
+            self.update_name_setup_index()
+            self.setup_frame.grid(row=0, column=0, sticky='nsew')
 
-            elif self.game_model.current_screen == 'PIN_ENTRY':
-                screen_type = 'pin'
-                self.update_code_frame_content(details.player_name, screen_type)
-                self.pin_frame.grid(row=0, column=0, sticky='nsew')
+        elif self.game_model.current_screen == 'PIN_ENTRY':
+            screen_type = 'pin'
+            self.update_code_frame_content(details.player_name, screen_type)
+            self.pin_frame.grid(row=0, column=0, sticky='nsew')
 
-            elif self.game_model.current_screen == 'GUESS_ENTRY':
-                screen_type = 'guess'
-                self.update_code_frame_content(details.player_name, screen_type)
-                self.guess_frame.grid(row=0, column=0, sticky='nsew')
+        elif self.game_model.current_screen == 'GUESS_ENTRY':
+            screen_type = 'guess'
+            self.update_code_frame_content(details.player_name, screen_type)
+            self.guess_frame.grid(row=0, column=0, sticky='nsew')
 
-            elif self.game_model.current_screen == 'GAME_OVER':
-                pass
+        elif self.game_model.current_screen == 'GAME_OVER':
+            pass
 
 
 
@@ -356,13 +375,25 @@ class GameView:
         self.presenter.create_player_sequence(self.player_mode.get())
 
     def name_entered(self):
-        pass
+        name = self.name_var.get()
+        self.name_entry.delete(0, tk.END)
+        self.presenter.store_name_sequence(name)
+        self.name_entry.focus()
 
     def pin_submitted(self):
-        pass
+        pin_string = ''.join(p.get() for p in self.entry_vars if p.get())
+        self.presenter.pin_submitted_sequence(pin_string)
+        for p in self.entry_boxes:
+            p.delete(0, tk.END)
+        self.entry_boxes[0].focus()
+
 
     def guess_submitted(self):
-        pass
+        guess_string = ''.join(g.get() for g in self.entry_vars if g.get())
+        self.presenter.guess_submitted_sequence(guess_string)
+        for g in self.entry_boxes:
+            g.delete(0, tk.END)
+        self.entry_boxes[0].focus()
 
     def guess_again_clicked(self):
         pass
