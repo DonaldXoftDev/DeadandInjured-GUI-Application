@@ -4,6 +4,8 @@ import tkinter as tk
 from typing import Protocol
 from tkinter.messagebox import showinfo, showerror,showwarning
 from backend_models.game_data_model import  MainGameModel
+from backend_models.game_screen_model import GameScreen
+from backend_models.view_model import AppViewModel
 from game_presenter import StatDetails, GameOverDetails
 
 
@@ -347,30 +349,31 @@ class GameView:
             self.prompt_label_frame.configure(text=new_text)
 
 
-    def render_new_screen(self, details: StatDetails |GameOverDetails | str  | None = None):
+    def render_new_screen(self, vm: AppViewModel):
         self.home_frame.grid_forget()
         self.setup_frame.grid_forget()
         self.pin_frame.grid_forget()
         self.guess_frame.grid_forget()
 
         # not sure if i should validate the details for emptiness
-        if self.game_model.current_screen == 'NAME_SETUP':
+
+        if vm.screen  == GameScreen.NAME_SETUP:
             self.update_name_setup_index()
             self.setup_frame.grid(row=0, column=0, sticky='nsew')
 
-        elif self.game_model.current_screen == 'PIN_ENTRY':
+        elif vm.screen == GameScreen.PIN_ENTRY:
             screen_type = 'pin'
-            self.update_code_frame_content(details.player_name, screen_type)
+            self.update_code_frame_content(vm.details.player_name, screen_type)
             self.pin_frame.grid(row=0, column=0, sticky='nsew')
 
-        elif self.game_model.current_screen == 'GUESS_ENTRY':
+        elif vm.screen == GameScreen.GUESS_ENTRY:
             screen_type = 'guess'
-            self.update_code_frame_content(details.player_name, screen_type)
+            self.update_code_frame_content(vm.details.player_name, screen_type)
             self.guess_frame.grid(row=0, column=0, sticky='nsew')
 
-        elif self.game_model.current_screen == 'STATS_SCREEN':
+        elif vm.screen == GameScreen.STATS_SCREEN:
             pass
-        elif self.game_model.current_screen == 'GAME_OVER':
+        elif vm.screen == GameScreen.GAME_OVER:
             pass
 
 

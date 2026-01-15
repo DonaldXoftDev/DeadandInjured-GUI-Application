@@ -1,17 +1,17 @@
 from typing import Protocol
 from backend_models.computer_player import ComputerPlayer
 from backend_models.feedback_mechanism import Feedback
+from backend_models.game_screen_model import GameScreen
 from backend_models.player_model import PlayerModel
 from backend_models.logic import Logic
 from backend_models.game_data_model import  MainGameModel
 from backend_models.stats_model import StatDetails
 from backend_models.gameover_data_model import GameOverDetails
-
-
+from backend_models.view_model import AppViewModel
 
 
 class ViewProtocol(Protocol):
-    def render_new_screen(self, details: StatDetails| GameOverDetails | str | None = None):
+    def render_new_screen(self, vm: AppViewModel) -> None:
         ...
 
     def display_error_popup(self,label: str, message: str):
@@ -42,6 +42,7 @@ class GamePresenter:
             computer = ComputerPlayer()
             computer.set_as_comp()
             human_player = PlayerModel()
+            self.game_model.players.clear()
             self.game_model.players.extend([human_player, computer])
         else:
             self.game_model.players.extend([PlayerModel() for _ in range(2)])
@@ -50,8 +51,9 @@ class GamePresenter:
 
     def create_player_sequence(self, mode: str):
         if self.create_players(mode):
-            self.game_model.current_screen = 'NAME_SETUP'
-            self.view.render_new_screen()
+            self.game_model.current_screen = GameScreen.NAME_SETUP
+            vm = AppViewModel(GameScreen.NAME_SETUP)
+            self.view.render_new_screen(vm)
         else:
             pass
 
@@ -63,7 +65,7 @@ class GamePresenter:
             msg = 'The name cannot be empty.'
             self.view.display_error_popup(label,msg)
 
-        elif len(name) < 3:
+        elif len(name) < 2:
             msg = 'The player name is too short'
             self.view.display_error_popup(label, msg)
 
@@ -78,15 +80,17 @@ class GamePresenter:
             self.game_model.screen_turn += 1
 
             if self.game_model.screen_turn < len(self.game_model.players) and all(p.is_human for p in self.game_model.players):
-                self.game_model.current_screen = 'NAME_SETUP'
-                self.view.render_new_screen()
+                self.game_model.current_screen = GameScreen.NAME_SETUP
+                vm = AppViewModel(GameScreen.NAME_SETUP)
+                self.view.render_new_screen(vm)
 
             else:
                 self.game_model.screen_turn = 0
-                self.game_model.current_screen = 'PIN_ENTRY'
+                self.game_model.current_screen = GameScreen.PIN_ENTRY
                 self.game_model.current_player = self.get_next_player()
                 detail = StatDetails(self.game_model.current_player)
-                self.view.render_new_screen(detail)
+                vm = AppViewModel(GameScreen.PIN_ENTRY, detail)
+                self.view.render_new_screen(vm)
 
 
     def pin_submitted_sequence(self, pin: str):
@@ -111,16 +115,18 @@ class GamePresenter:
             self.game_model.screen_turn += 1
 
             if self.game_model.screen_turn < len(self.game_model.players) and all(p.is_human for p in self.game_model.players):
-                self.game_model.current_screen = 'PIN_ENTRY'
+                self.game_model.current_screen = GameScreen.PIN_ENTRY
                 self.game_model.current_player = self.get_next_player()
                 detail = StatDetails(self.game_model.current_player)
-                self.view.render_new_screen(detail)
+                vm = AppViewModel(GameScreen.PIN_ENTRY, detail)
+                self.view.render_new_screen(vm)
             else:
                 self.game_model.screen_turn = 0
-                self.game_model.current_screen = 'GUESS_ENTRY'
+                self.game_model.current_screen = GameScreen.GUESS_ENTRY
                 self.game_model.current_player = self.get_next_player()
                 detail = StatDetails(self.game_model.current_player)
-                self.view.render_new_screen(detail)
+                vm = AppViewModel(GameScreen.GUESS_ENTRY, detail)
+                self.view.render_new_screen(vm)
 
 
     def guess_submitted_sequence(self, guess: str):
@@ -163,22 +169,20 @@ class GamePresenter:
             player.update_feed_back_history(feedback_msg)
 
             if self.Logic.has_won(player):
-                self.game_model.current_screen = 'GAME_OVER'
+                self.game_model.current_screen = GameScreen.GAME_OVER
                 game_over_details = GameOverDetails(winner=player, loser=opponent)
                 print('wow, shocked you won!')
                 self.Logic.save_winner(self.file_name, winner=player)
                 self.Logic.rank_winner_by_guess_count(self.file_name)
-                self.view.render_new_screen(game_over_details)
+                vm = AppViewModel(GameScreen.GAME_OVER, game_over_details)
+                self.view.render_new_screen(vm)
 
             else:
-                self.game_model.current_screen = 'STATS_SCREEN'
+                self.game_model.current_screen = GameScreen.STATS_SCREEN
                 stats_details = StatDetails(player)
-                self.view.render_new_screen(stats_details)
+                vm = AppViewModel(GameScreen.STATS_SCREEN, stats_details)
+                self.view.render_new_screen(vm)
                 print('This should happen')
-
-
-
-
 
 
     def guess_again_sequence(self):
