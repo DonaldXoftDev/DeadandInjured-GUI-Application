@@ -6,7 +6,9 @@ from tkinter.messagebox import showinfo, showerror,showwarning
 from backend_models.game_data_model import  MainGameModel
 from backend_models.game_screen_model import GameScreen
 from backend_models.view_model import AppViewModel
-from game_presenter import StatDetails, GameOverDetails
+from backend_models.stats_model import StatDetails
+from backend_models.gameover_data_model import GameOverDetails
+from frontend_model.name_label_frame import NameLabel
 
 
 # from name_label_frame import NameLabel
@@ -65,6 +67,7 @@ class GameView:
         self.pin_title_label = None
         self.guess_title_label = None
         self.box_entry = None
+        self.stats_inner_frame = None
         self.prompt_label_frame = None
         self.ui_player_index  = 0
         self.COUNT = 0
@@ -83,7 +86,7 @@ class GameView:
         self.setup_frame = self.setup_screen()
         self.pin_frame = self.pin_input_screen()
         self.guess_frame = self.guess_input_screen()
-        # self.stats_frame = self.stats_screen(self.dummy_stats)
+        self.stats_frame = self.stats_screen()
         # self.comp_frame = self.comp_screen()
 
 
@@ -275,37 +278,23 @@ class GameView:
         return self.code_input_screen(type, label, command_on_click=command)
 
 
-    def stats_screen(self, required_stats: list[StatDetails] | None = None) -> ttk.Frame:
+    def stats_screen(self) -> ttk.Frame:
 
         frame = ttk.Frame(self.window, style='TFrame')
 
-        main_frame = ttk.Frame(frame, style='TFrame')
-        main_frame.grid(row=0, column=0, padx=10)
+        self.stats_inner_frame = ttk.Frame(frame, style='TFrame')
+        self.stats_inner_frame.grid(row=0, column=0, padx=10)
 
-        title_label = ttk.Label(main_frame, text="STATS", )
+        title_label = ttk.Label(self.stats_inner_frame, text="STATS", )
         title_label.grid(row=0, column=0, padx=(10, 300))
 
-        horizontal_divider = ttk.Separator(main_frame, orient='horizontal')
+        horizontal_divider = ttk.Separator(self.stats_inner_frame, orient='horizontal')
         horizontal_divider.grid(row=1, column=0, columnspan=6, sticky='ew', padx=10, pady=10)
 
-        main_frame.grid_columnconfigure(1, weight=1)
-
-        l_frames = []
-        stat_list = required_stats.get('stats_list')
-        for i in range(len(stat_list)):
-            name_label_frame = NameLabel(main_frame, stat_list[i])
-            l_frames.append(name_label_frame)
-
-        # labels.pop(0)
-        if len(l_frames) > 1:
-            for i,label in enumerate(l_frames):
-                label.frame.grid(row=2, column=i, padx=10, pady=10)
-                label.frame.grid_columnconfigure(i, weight=1)
-        else:
-            l_frames[0].frame.grid(row=2, column=0, padx=10, pady=10)
+        self.stats_inner_frame.grid_columnconfigure(1, weight=1)
 
         guess_again_btn = ttk.Button(frame, text='GUESS AGAIN', bootstyle='success',
-                                     command=None)
+                                     command=self.guess_again_clicked)
 
         guess_again_btn.grid(row=3, column=0, padx=50, pady=10)
 
@@ -348,12 +337,28 @@ class GameView:
             new_text = f'PLAYER{self.ui_player_index}, ENTER A PLAYER NAME'
             self.prompt_label_frame.configure(text=new_text)
 
+    def update_stat_screen(self, sub_stats: list[StatDetails]):
+        if self.stats_inner_frame is None:
+            print('Error; The stat main frame is still None')
+
+        l_frames = []
+        for i in range(len(sub_stats)):
+            name_label_frame = NameLabel(self.stats_inner_frame, sub_stats[i])
+            l_frames.append(name_label_frame)
+
+        if len(l_frames) > 1:
+            for i, label in enumerate(l_frames):
+                label.frame.grid(row=2, column=i, padx=10, pady=10)
+                label.frame.grid_columnconfigure(i, weight=1)
+        else:
+            l_frames[0].frame.grid(row=2, column=0, padx=10, pady=10)
 
     def render_new_screen(self, vm: AppViewModel):
         self.home_frame.grid_forget()
         self.setup_frame.grid_forget()
         self.pin_frame.grid_forget()
         self.guess_frame.grid_forget()
+        self.stats_frame.grid_forget()
 
         # not sure if i should validate the details for emptiness
 
@@ -372,7 +377,9 @@ class GameView:
             self.guess_frame.grid(row=0, column=0, sticky='nsew')
 
         elif vm.screen == GameScreen.STATS_SCREEN:
-            pass
+            self.update_stat_screen(vm.details.sub_stats)
+            self.stats_frame.grid(row=0, column=0, sticky='nsew')
+
         elif vm.screen == GameScreen.GAME_OVER:
             pass
 
@@ -403,6 +410,7 @@ class GameView:
             g.delete(0, tk.END)
         self.entry_boxes[0].focus()
 
+
     def guess_again_clicked(self):
-        pass
+        self.presenter.guess_again_sequence()
 

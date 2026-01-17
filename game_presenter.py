@@ -26,6 +26,9 @@ class GamePresenter:
         self.view = view
         self.Logic = logic
         self.game_model = game_model
+        self.base_game_player = PlayerModel()
+        self.base_game_player.set_name('GAME-STATS')
+        self.master_stats = StatDetails(self.base_game_player)
         self.file_name = 'D_n_I_leaderboard.json'
 
 
@@ -180,11 +183,31 @@ class GamePresenter:
             else:
                 self.game_model.current_screen = GameScreen.STATS_SCREEN
                 stats_details = StatDetails(player)
-                vm = AppViewModel(GameScreen.STATS_SCREEN, stats_details)
+
+                sub_stats = self.master_stats.sub_stats
+                sub_stat_names = [p.player_name for p in sub_stats]
+
+                if player.name in sub_stat_names:
+                    matched_stat = None
+                    for stat in sub_stats:
+                        if stat.player_name == player.name:
+                            matched_stat = stat
+                            break
+                    matched_stat.player_guess = player.guess
+                    matched_stat.player_guess_count = player.guess_count
+                    matched_stat.feedback_history = player.feedback_history
+
+                else:
+                    sub_stats.append(stats_details)
+
+                vm = AppViewModel(GameScreen.STATS_SCREEN, self.master_stats)
                 self.view.render_new_screen(vm)
                 print('This should happen')
 
 
     def guess_again_sequence(self):
-        ...
-
+        self.game_model.current_screen = GameScreen.GUESS_ENTRY
+        self.game_model.current_player = self.get_next_player()
+        detail = StatDetails(self.game_model.current_player)
+        vm = AppViewModel(GameScreen.GUESS_ENTRY, detail)
+        self.view.render_new_screen(vm)

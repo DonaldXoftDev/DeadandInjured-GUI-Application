@@ -6,7 +6,7 @@ from game_presenter import StatDetails
 class NameLabel:
     def __init__(self, master, details: StatDetails):
         self.details = details
-        self.frame = ttk.LabelFrame(master, text=self.details.player_name, labelanchor='nw')
+        self.frame = ttk.LabelFrame(master, text=self.details.player_name.title(), labelanchor='nw')
 
         self.pin_vars = []
         self.guess_vars = []
@@ -143,18 +143,5 @@ class NameLabel:
                               data=count_list,start_row=0,var_list=self.count_vars, range_count=len(guess_attempt))
         return frame
 
-
-# window = ttk.Window(themename='superhero')
-#
-#
-# players = [PlayerModel('donald'), PlayerModel('alice')]
-#
-#
-# for i in range(len(players)):
-#     required_details = RequiredDetails(players[i], None, None)
-#     player_name_label = NameLabel(window, required_details)
-#     player_name_label.frame.grid(row=0, column=i, padx=10, pady=10)
-#
-# window.mainloop()
 
 

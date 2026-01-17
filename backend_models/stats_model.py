@@ -5,6 +5,6 @@ class StatDetails:
         self.player_name:str = turn.name
         self.player_pin: list[int] = turn.pin
         self.player_guess: list[int] = turn.guess
-        self.all_player_stats: list[StatDetails]
+        self.sub_stats: list['StatDetails'] = []
         self.player_guess_count: int = turn.guess_count
         self.feedback_history: list[str] = turn.feedback_history
