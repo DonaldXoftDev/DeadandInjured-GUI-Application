@@ -110,6 +110,14 @@ class NameLabel:
         history_widget = tk.Text(frame, height=5, width=22, font=('Helvetica', 15))
         history_widget.grid(row=0, column=0, sticky='nsew', padx=6, pady=10)
 
+        user_history = self.details.feedback_history
+        for item in user_history:
+            content = f'{item}\n'
+            history_widget.insert(tk.END, content)
+
+        history_widget.see(tk.END)
+        history_widget.config(state='disabled')
+
         scrollbar = ttk.Scrollbar(frame, orient='vertical', bootstyle='round')
         scrollbar.grid(row=0, column=1, sticky='ns', pady=10)
 
@@ -117,6 +125,8 @@ class NameLabel:
         scrollbar.config(command=history_widget.yview)
 
         return frame
+
+
 
     def create_guess_count_label_frame(self, parent_frame) -> ttk.LabelFrame:
         frame = ttk.LabelFrame(parent_frame, text='GUESS COUNT', labelanchor='n')

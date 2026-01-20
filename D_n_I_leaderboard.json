@@ -14,5 +14,9 @@
     {
         "name": "finn",
         "guess_count": 4
+    },
+    {
+        "name": "jonny",
+        "guess_count": 6
     }
 ]
