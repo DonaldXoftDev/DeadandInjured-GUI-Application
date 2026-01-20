@@ -168,8 +168,11 @@ class GamePresenter:
             player.update_current_feedback(feedback_data)
 
             #returns a string of the feedback message e.g. 1d 2inj
-            feedback_msg = Feedback(feedback_data).feedback_result()
-            player.update_feed_back_history(feedback_msg)
+            feedback = Feedback(feedback_data)
+            feedback_msg = feedback.feedback_result()
+            history_item = feedback.structure_feedback_msg(current_guess=valid_guess, feedback_msg=feedback_msg)
+
+            player.update_feed_back_history(history_item)
 
             if self.Logic.has_won(player):
                 self.game_model.current_screen = GameScreen.GAME_OVER

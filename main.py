@@ -11,3 +11,4 @@ view = GameView(model)
 presenter = GamePresenter(view=view, logic=logic, game_model=model)
 view.presenter = presenter
 presenter.view.start()
+
