@@ -1,22 +1,14 @@
 [
     {
-        "name": "james",
+        "name": "poliu",
         "guess_count": 1
-    },
-    {
-        "name": "splendor",
-        "guess_count": 2
     },
     {
         "name": "jake",
         "guess_count": 2
     },
     {
-        "name": "finn",
-        "guess_count": 4
-    },
-    {
-        "name": "jonny",
-        "guess_count": 6
+        "name": "mikey",
+        "guess_count": 2
     }
 ]

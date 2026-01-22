@@ -52,10 +52,16 @@ class NameLabel:
         else:
             for var in self.pin_vars:
                 var.set('⚫')
+    def set_variable(self,box_var, data: any, index: int) -> None:
+        """this decides what data to set in the box variable depending on type """
+        if isinstance(data, list):
+            box_var.set(data[index])
+        elif data:
+            box_var.set(str(data))
 
     def create_pin_boxes(self,frame, boot_style_color:str, entry_state, style:str, data,
                          start_row:int, var_list:list,  range_count:int):
-
+        """ this creates any specific number of boxes  with specific data inside each boxes"""
         for i in range(range_count):
             box_var = tk.StringVar()
             box_entry = ttk.Entry(
@@ -71,10 +77,7 @@ class NameLabel:
             box_entry.grid(row=start_row,column=i, padx=10, pady=10)
             var_list.append(box_var)
 
-            if isinstance(data,list):
-                box_var.set(data[i])
-            elif data:
-                box_var.set(str(data))
+            self.set_variable(box_var, data, i)
 
             frame.grid_columnconfigure(i, weight=1)
 
@@ -107,7 +110,7 @@ class NameLabel:
     def create_feedback_label_frame(self, parent_frame) -> ttk.LabelFrame:
         frame = ttk.LabelFrame(parent_frame, text='HISTORY', labelanchor='n')
 
-        history_widget = tk.Text(frame, height=5, width=22, font=('Helvetica', 15))
+        history_widget = tk.Text(frame, height=3.2, width=22, font=('Helvetica', 15))
         history_widget.grid(row=0, column=0, sticky='nsew', padx=6, pady=10)
 
         user_history = self.details.feedback_history

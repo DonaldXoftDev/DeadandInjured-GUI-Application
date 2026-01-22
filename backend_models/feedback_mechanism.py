@@ -15,7 +15,7 @@ class Feedback:
             return f'{self.feedback_data['dead']}dead and {self.feedback_data['injured']}inj'
 
     def structure_feedback_msg(self, feedback_msg: str, current_guess: list[int]) -> str:
-        structured_data = f'{''.join(str(d) for d in current_guess)}  -  {feedback_msg}'
+        structured_data = f'{''.join(str(d) for d in current_guess)}   -   {feedback_msg}'
         return structured_data
 
 

@@ -101,15 +101,15 @@ class GamePresenter:
         print(pin)
         label= 'PIN'
         if not pin:
-            msg = 'The PIN cannot be empty.'
+            msg = f'The {label} cannot be empty.'
             self.view.display_error_popup(label, msg)
 
         elif not self.Logic.is_unique(pin):
-            msg = 'The PIN is not unique.'
+            msg = f'The {label} is not unique.'
             self.view.display_error_popup(label, msg)
 
         elif not self.Logic.is_all_digit(pin):
-            msg = 'The PIN has to be all digits.'
+            msg = f'The {label} has to be all digits.'
             self.view.display_error_popup(label, msg)
         else:
             valid_pin = self.Logic.parse_code_as_list(pin)
@@ -136,15 +136,15 @@ class GamePresenter:
         guess = guess.strip()
         label = 'GUESS'
         if not guess:
-            msg = 'The PIN cannot be empty.'
+            msg = f'The {label} cannot be empty.'
             self.view.display_error_popup(label, msg)
 
         elif not self.Logic.is_unique(guess):
-            msg = 'The PIN must be 4 digits and unique.'
+            msg = f'The {label} must be 4 digits and unique.'
             self.view.display_error_popup(label, msg)
 
         elif not self.Logic.is_all_digit(guess):
-            msg = 'The PIN has to be all digits.'
+            msg = f'The {label} has to be all digits.'
             self.view.display_error_popup(label, msg)
         else:
             valid_guess = self.Logic.parse_code_as_list(guess)
