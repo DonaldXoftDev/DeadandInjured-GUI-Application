@@ -10,5 +10,13 @@
     {
         "name": "mikey",
         "guess_count": 2
+    },
+    {
+        "name": "james",
+        "guess_count": 2
+    },
+    {
+        "name": "donald",
+        "guess_count": 2
     }
 ]
