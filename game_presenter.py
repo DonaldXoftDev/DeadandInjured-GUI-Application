@@ -160,10 +160,9 @@ class GamePresenter:
             feedback_data = self.Logic.compare_pin_to_guess(player, opponent)
 
             if not player.is_human:
-                print('the player is computer')
                 self.Logic.computer_guessing_strategy(computer=player)
 
-            print('definitely a human playing!')
+
             # updates the player's feedback
             player.update_current_feedback(feedback_data)
 
@@ -177,7 +176,6 @@ class GamePresenter:
             if self.Logic.has_won(player):
                 self.game_model.current_screen = GameScreen.GAME_OVER
                 game_over_details = GameOverDetails(winner=player, loser=opponent)
-                print('wow, shocked you won!')
                 self.Logic.save_winner(self.file_name, winner=player)
                 self.Logic.rank_winner_by_guess_count(self.file_name)
                 vm = AppViewModel(GameScreen.GAME_OVER, game_over_details)
@@ -205,8 +203,12 @@ class GamePresenter:
 
                 vm = AppViewModel(GameScreen.STATS_SCREEN, self.master_stats)
                 self.view.render_new_screen(vm)
-                print('This should happen')
 
+    def leaderboard_sequence(self):
+        pass
+
+    def play_again_sequence(self):
+        pass
 
     def guess_again_sequence(self):
         self.game_model.current_screen = GameScreen.GUESS_ENTRY

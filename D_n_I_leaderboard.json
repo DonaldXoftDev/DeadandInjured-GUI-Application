@@ -18,5 +18,13 @@
     {
         "name": "donald",
         "guess_count": 2
+    },
+    {
+        "name": "julius",
+        "guess_count": 2
+    },
+    {
+        "name": "minty",
+        "guess_count": 4
     }
 ]

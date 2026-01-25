@@ -345,7 +345,7 @@ class GameView:
             font=self.game_over_label_font,
             foreground= '#FF2929'
         )
-        game_over_title.grid(row=0, column=0, padx=10, pady=10)
+        game_over_title.grid(row=0, column=0, padx=10)
 
         horiz_rule = ttk.Separator(
             frame,
@@ -358,14 +358,14 @@ class GameView:
             frame,
             style='TFrame'
         )
-        inner_frame.grid(row=2, column=0, padx=10)
+        inner_frame.grid(row=2, column=0, padx=10, sticky='nsew')
 
         #contains the winner and loser frames
         player_outcome_frame = ttk.Frame(
             inner_frame,
             style='TFrame',
         )
-        player_outcome_frame.grid(row=0, column=0, padx=10)
+        player_outcome_frame.grid(row=0, column=0, padx=10, sticky='nsew')
 
         winner_frame = self.player_result_frame(
             player_outcome_frame,
@@ -452,7 +452,7 @@ class GameView:
         loser_pin_label = ttk.Label(
             frame,
             text= "Loser's Pin",
-            font = self.label_font,
+            font =  self.label_font,
             foreground= '#adb5bd'
         )
         loser_pin_label.grid(row=0, column=1, padx=(290, 10), pady=(10,0))
@@ -461,19 +461,19 @@ class GameView:
         self.winner_act_pin_label = ttk.Label(
             frame,
             text= ' '.join(n for n in '2057'),
-            font = self.label_font,
+            font =('Inter', 15, 'bold'),
             foreground= '#adb5bd'
 
         )
-        self.winner_act_pin_label.grid(row=1, column=0, padx=10, pady=10)
+        self.winner_act_pin_label.grid(row=1, column=0, padx=(5,10), pady=5)
 
         self.loser_act_pin_label = ttk.Label(
             frame,
             text = ' '.join(n for n in '3091'),
-            font= self.label_font,
+            font= ('Inter', 15, 'bold'),
             foreground= '#adb5bd'
         )
-        self.loser_act_pin_label.grid(row=1, column=1, padx=(290, 10), pady=10)
+        self.loser_act_pin_label.grid(row=1, column=1, padx=(290,5), pady=5)
 
         self.metric_message_label  = ttk.Label(
             frame,
@@ -483,7 +483,7 @@ class GameView:
 
         )
 
-        self.metric_message_label.grid(row=2,columnspan=3, padx=10, pady=10, sticky='nsew')
+        self.metric_message_label.grid(row=2,columnspan=3, padx=10, pady=(2,10), sticky='nsew')
 
         return frame
 
@@ -497,26 +497,27 @@ class GameView:
         )
         self.emoji_label.grid(row=0, column=0, padx=10, pady=10,)
 
-        self.game_over_player_title_label =ttk.Label(
+        game_over_player_title_label =ttk.Label(
             frame,
             text=title,
             font=self.game_over_label_font,
             foreground = '#08CB00' if is_winner else '#FF2929'
         )
-        self.game_over_player_title_label.grid(row=1, column=0, padx=10, pady=10)
+        game_over_player_title_label.grid(row=1, column=0, padx=10, pady=10)
 
-        if is_winner:
-            self.winner_name_label  = self.game_over_player_title_label
-        else:
-            self.loser_name_label = self.game_over_player_title_label
-
-        gameover_player_name_label = ttk.Label(
+        game_over_player_name_label = ttk.Label(
             frame,
             text=player_name,
             font=self.label_font,
-            foreground= '#adb5bd'
+            foreground='#adb5bd'
         )
-        gameover_player_name_label.grid(row=2, column=0, padx=10, pady=10)
+        game_over_player_name_label.grid(row=2, column=0, padx=10, pady=10)
+
+        if is_winner:
+            self.winner_name_label  = game_over_player_name_label
+        else:
+            self.loser_name_label = game_over_player_name_label
+
 
         return frame
 
@@ -599,8 +600,8 @@ class GameView:
         loser_pin_string = self.format_to_string(details.loser_pin)
         self.loser_act_pin_label.configure(text=loser_pin_string)
 
-        new_text = (f"{details.winner_name.upper()} guessed {details.loser_name.upper()}'s pin in "
-                    f"{details.winner_guess_count}  tries")
+        new_text = (f"{details.winner_name.title()} guessed {details.loser_name.title()}'s pin in "
+                    f"{details.winner_guess_count} tries")
 
         self.metric_message_label.configure(text=new_text)
 
