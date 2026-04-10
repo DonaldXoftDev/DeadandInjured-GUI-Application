@@ -6,7 +6,7 @@ from backend_models.stats_model import StatDetails
 class AppViewModel:
     def __init__(self,
                  screen: GameScreen,
-                 data: StatDetails| GameOverDetails | str | None = None
+                 data: any = None
                  ):
         self.screen = screen
         self.details = data

@@ -7,4 +7,5 @@ class GameScreen(Enum):
     GUESS_ENTRY = auto()
     STATS_SCREEN = auto()
     GAME_OVER = auto()
+    LEADERBOARD = auto()
 

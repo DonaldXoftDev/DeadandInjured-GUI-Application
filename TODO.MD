@@ -10,3 +10,4 @@ what next after completing the gui for this project?
 -use this project to learn backend development
 -this would entail learning to create endpoints for the guessing, pin, stats', game over screens
 
+Also not forgetting a massive refactoring for the game view as it is too large and can be modularised.

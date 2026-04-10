@@ -1,30 +1,27 @@
-[
-    {
-        "name": "poliu",
-        "guess_count": 1
+{
+    "donald:joey": {
+        "winner": "donald",
+        "loser": "Joey",
+        "winner_guess_count": 7
     },
-    {
-        "name": "jake",
-        "guess_count": 2
+    "frank:joey": {
+        "winner": "frank",
+        "loser": "joey",
+        "winner_guess_count": 3
     },
-    {
-        "name": "mikey",
-        "guess_count": 2
+    "junior:donald": {
+        "winner": "junior",
+        "loser": "donald",
+        "winner_guess_count": 2
     },
-    {
-        "name": "james",
-        "guess_count": 2
+    "jake:donald": {
+        "winner": "jake",
+        "loser": "donald",
+        "winner_guess_count": 4
     },
-    {
-        "name": "donald",
-        "guess_count": 2
-    },
-    {
-        "name": "julius",
-        "guess_count": 2
-    },
-    {
-        "name": "minty",
-        "guess_count": 4
+    "tina:donald": {
+        "winner": "tina",
+        "loser": "donald",
+        "winner_guess_count": 3
     }
-]
+}

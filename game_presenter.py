@@ -1,3 +1,8 @@
+"""
+The Presenter module in the Model-View-Presenter (MVP) architecture.
+This acts as the central coordinator, reacting to user inputs from the View,
+updating the underlying Game Models, and instructing the View to render updates.
+"""
 from typing import Protocol
 from backend_models.computer_player import ComputerPlayer
 from backend_models.feedback_mechanism import Feedback
@@ -11,48 +16,88 @@ from backend_models.view_model import AppViewModel
 
 
 class ViewProtocol(Protocol):
+    """
+    A structural type protocol defining the expected interface of the View.
+    This allows the Presenter to remain decoupled from the concrete Tkinter GUI,
+    facilitating easier testing and strict separation of concerns.
+    """
     def render_new_screen(self, vm: AppViewModel) -> None:
+        """Transitions the application to a new screen based on the provided View Model."""
         ...
 
     def display_error_popup(self,label: str, message: str):
+        """Renders an error modal/popup to the user."""
         ...
 
     def start(self):
+        """Starts the main UI event loop."""
         ...
 
 
 class GamePresenter:
+    """
+    Orchestrates the Dead and Injured game flow.
+    
+    Responsibilities:
+    - Managing the turn-based state machine.
+    - Handling data validation for user inputs (Names, PINs, Guesses).
+    - Facilitating communication between the Logic/Model layers and the View layer.
+    """
     def __init__(self, view: ViewProtocol, logic:Logic, game_model:MainGameModel):
+        """
+        Initializes the presenter with its required dependencies.
+        """
         self.view = view
         self.Logic = logic
         self.game_model = game_model
+        
+        # Base player object used solely to aggregate and display global match statistics
         self.base_game_player = PlayerModel()
         self.base_game_player.set_name('GAME-STATS')
         self.master_stats = StatDetails(self.base_game_player)
+        
+        # Local file reference for persisting leaderboard statistics
         self.file_name = 'D_n_I_leaderboard.json'
 
 
     def get_next_player(self) -> PlayerModel:
+        """Advances the internal turn index and returns the player whose turn is next."""
         next_index = self.get_next_index()
         self.game_model.current_index = next_index
         return self.game_model.players[self.game_model.current_index]
 
     def get_next_index(self) -> int:
+        """Calculates the next player's index using modulo arithmetic for circular looping."""
         return  (self.game_model.current_index + 1) % len(self.game_model.players)
 
     def create_players(self,mode) -> bool:
+        """
+        Instantiates the required PlayerModel objects based on the selected game mode.
+        
+        Args:
+            mode (str): The chosen game mode (e.g., 'H_Vs_C' or 'H_Vs_H').
+        Returns:
+            bool: True indicating successful creation.
+        """
         if mode.lower() == 'h_vs_c':
             computer = ComputerPlayer()
             computer.set_as_comp()
             human_player = PlayerModel()
             self.game_model.players.clear()
-            self.game_model.players.extend([human_player, computer])
+            self.game_model.players = [human_player, computer]
         else:
-            self.game_model.players.extend([PlayerModel() for _ in range(2)])
+            self.game_model.players = [PlayerModel() for _ in range(2)]
 
         return True
 
     def create_player_sequence(self, mode: str):
+        """
+        Triggered when a user selects a game mode from the home screen.
+        Initializes players and commands the view to transition to the Name Setup screen.
+        
+        Args:
+            mode (str): The chosen game mode.
+        """
         if self.create_players(mode):
             self.game_model.current_screen = GameScreen.NAME_SETUP
             vm = AppViewModel(GameScreen.NAME_SETUP)
@@ -62,6 +107,14 @@ class GamePresenter:
 
 
     def store_name_sequence(self, name: str):
+        """
+        Validates and registers a player's name.
+        It continuously prompts the Name Setup screen until all human players are named,
+        after which it transitions to the PIN Entry screen.
+        
+        Args:
+            name (str): The submitted player name.
+        """
         label = 'NAME'
         if not name:
             print('NO name is stored')
@@ -73,6 +126,7 @@ class GamePresenter:
             self.view.display_error_popup(label, msg)
 
         else:
+            # First player gets set at turn 0, subsequent players use get_next_player()
             if self.game_model.screen_turn == 0:
                 self.game_model.current_player = self.game_model.players[0]
                 self.game_model.current_player.set_name(name)
@@ -80,14 +134,17 @@ class GamePresenter:
                 self.game_model.current_player = self.get_next_player()
                 self.game_model.current_player.set_name(name)
 
+            # Advance the setup turn counter
             self.game_model.screen_turn += 1
 
+            # If there are more human players left to name, reload Name Setup
             if self.game_model.screen_turn < len(self.game_model.players) and all(p.is_human for p in self.game_model.players):
                 self.game_model.current_screen = GameScreen.NAME_SETUP
                 vm = AppViewModel(GameScreen.NAME_SETUP)
                 self.view.render_new_screen(vm)
 
             else:
+                # Setup complete. Reset turn counter and proceed to PIN setup phase
                 self.game_model.screen_turn = 0
                 self.game_model.current_screen = GameScreen.PIN_ENTRY
                 self.game_model.current_player = self.get_next_player()
@@ -95,28 +152,52 @@ class GamePresenter:
                 vm = AppViewModel(GameScreen.PIN_ENTRY, detail)
                 self.view.render_new_screen(vm)
 
-
-    def pin_submitted_sequence(self, pin: str):
-        pin = pin.strip()
-        print(pin)
-        label= 'PIN'
-        if not pin:
+    def poss_input_error(self, digits: str, label: str) -> bool:
+        """
+        Validates numeric code strings for standard rules (PINs and Guesses).
+        Displays a tailored error popup if constraints are violated.
+        
+        Args:
+            digits (str): The code string to validate.
+            label (str): The context of the input ('PIN' or 'GUESS').
+        Returns:
+            bool: True if an error is present, False if the input is completely valid.
+        """
+        if not digits:
             msg = f'The {label} cannot be empty.'
             self.view.display_error_popup(label, msg)
+            return True
 
-        elif not self.Logic.is_unique(pin):
-            msg = f'The {label} is not unique.'
+        elif not self.Logic.is_unique(digits):
+            msg = f'The {label} must be 4 digits and unique.'
             self.view.display_error_popup(label, msg)
+            return True
 
-        elif not self.Logic.is_all_digit(pin):
+        elif not self.Logic.is_all_digit(digits):
             msg = f'The {label} has to be all digits.'
             self.view.display_error_popup(label, msg)
-        else:
+            return True
+            
+        return False
+
+
+    def pin_submitted_sequence(self, pin: str):
+        """
+        Validates and registers a player's secret PIN.
+        Transitions to the next player's PIN entry, or proceeds to the guessing phase
+        if all players have successfully entered their PINs.
+        """
+        pin = pin.strip()
+        label= 'PIN'
+
+        # Proceed only if the input passes all validation checks
+        if not self.poss_input_error(pin, label):
             valid_pin = self.Logic.parse_code_as_list(pin)
             self.game_model.current_player.update_pin(valid_pin)
 
             self.game_model.screen_turn += 1
 
+            # Check if there are still human players needing to set a PIN
             if self.game_model.screen_turn < len(self.game_model.players) and all(p.is_human for p in self.game_model.players):
                 self.game_model.current_screen = GameScreen.PIN_ENTRY
                 self.game_model.current_player = self.get_next_player()
@@ -124,6 +205,7 @@ class GamePresenter:
                 vm = AppViewModel(GameScreen.PIN_ENTRY, detail)
                 self.view.render_new_screen(vm)
             else:
+                # Setup phase entirely complete, initiate main guessing loop
                 self.game_model.screen_turn = 0
                 self.game_model.current_screen = GameScreen.GUESS_ENTRY
                 self.game_model.current_player = self.get_next_player()
@@ -133,62 +215,68 @@ class GamePresenter:
 
 
     def guess_submitted_sequence(self, guess: str):
+        """
+        The core game loop sequence triggered when a user submits a guess.
+        Processes the guess, calculates feedback, checks for win conditions,
+        updates local player metrics, and determines if the game should end
+        or proceed to the inter-turn Stats screen.
+        """
         guess = guess.strip()
         label = 'GUESS'
-        if not guess:
-            msg = f'The {label} cannot be empty.'
-            self.view.display_error_popup(label, msg)
-
-        elif not self.Logic.is_unique(guess):
-            msg = f'The {label} must be 4 digits and unique.'
-            self.view.display_error_popup(label, msg)
-
-        elif not self.Logic.is_all_digit(guess):
-            msg = f'The {label} has to be all digits.'
-            self.view.display_error_popup(label, msg)
+        
+        # Do nothing if the validation flags an error
+        if  self.poss_input_error(guess, label):
+            pass
         else:
+            # Parse the input into a usable integer list
             valid_guess = self.Logic.parse_code_as_list(guess)
 
             player = self.game_model.current_player
             opponent = self.game_model.players[self.get_next_index()]
 
-            #updates the current player's guess
+            # Update the current player's state tracking
             player.update_guess(valid_guess)
             player.increment_guess_count()
 
-            #returns the result of the comparison of player guess and opponent pin as a dict
+            # Execute core rules engine: Evaluate guess vs opponent's PIN
             feedback_data = self.Logic.compare_pin_to_guess(player, opponent)
 
+            # If it's a computer turn, allow it to filter its internal logic branches
             if not player.is_human:
                 self.Logic.computer_guessing_strategy(computer=player)
 
-
-            # updates the player's feedback
+            # Store raw mathematical feedback internally
             player.update_current_feedback(feedback_data)
 
-            #returns a string of the feedback message e.g. 1d 2inj
+            # Construct user-facing string representation of feedback (e.g., '1d 2inj')
             feedback = Feedback(feedback_data)
             feedback_msg = feedback.feedback_result()
             history_item = feedback.structure_feedback_msg(current_guess=valid_guess, feedback_msg=feedback_msg)
 
+            # Append turn history for the stats screen
             player.update_feed_back_history(history_item)
 
+            # -- Win Condition Check --
             if self.Logic.has_won(player):
                 self.game_model.current_screen = GameScreen.GAME_OVER
                 game_over_details = GameOverDetails(winner=player, loser=opponent)
-                self.Logic.save_winner(self.file_name, winner=player)
-                self.Logic.rank_winner_by_guess_count(self.file_name)
+                
+                # Persist match data and trigger UI render
+                self.Logic.save_to_leaderboard(self.file_name, winner=player, loser=opponent)
                 vm = AppViewModel(GameScreen.GAME_OVER, game_over_details)
                 self.view.render_new_screen(vm)
 
             else:
+                # Round is over but game continues. Show the intermediary Stats Screen.
                 self.game_model.current_screen = GameScreen.STATS_SCREEN
                 stats_details = StatDetails(player)
 
+                # Update the presenter's central stats aggregate tracking
                 sub_stats = self.master_stats.sub_stats
                 sub_stat_names = [p.player_name for p in sub_stats]
 
                 if player.name in sub_stat_names:
+                    # Update existing record
                     matched_stat = None
                     for stat in sub_stats:
                         if stat.player_name == player.name:
@@ -199,18 +287,25 @@ class GamePresenter:
                     matched_stat.feedback_history = player.feedback_history
 
                 else:
+                    # Append new tracker if the player hasn't guessed yet
                     sub_stats.append(stats_details)
 
                 vm = AppViewModel(GameScreen.STATS_SCREEN, self.master_stats)
                 self.view.render_new_screen(vm)
 
     def leaderboard_sequence(self):
-        pass
+        """Stub for future implementation of fetching and displaying Leaderboard records."""
+        sorted_leaderboard = self.Logic.get_sorted_leaderboard(self.file_name)
+        vm = AppViewModel(GameScreen.LEADERBOARD, data=sorted_leaderboard)
+        self.view.render_new_screen(vm)
+
 
     def play_again_sequence(self):
+        """Stub for future implementation of wiping state and restarting the game."""
         pass
 
     def guess_again_sequence(self):
+        """Transitions from the inter-turn Stats Screen back to the main Guessing Screen for the next turn."""
         self.game_model.current_screen = GameScreen.GUESS_ENTRY
         self.game_model.current_player = self.get_next_player()
         detail = StatDetails(self.game_model.current_player)

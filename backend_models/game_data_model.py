@@ -1,5 +1,6 @@
 from backend_models.player_model import PlayerModel
 from backend_models.game_screen_model import GameScreen
+
 class MainGameModel:
     def __init__(self):
         self.players: list[PlayerModel] = []

@@ -1,5 +1,4 @@
 
-
 class CodeInputViewModel:
     def __init__(self,
                  screen_type: str,
