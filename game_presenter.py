@@ -28,7 +28,8 @@ class ViewProtocol(Protocol):
     def display_error_popup(self,label: str, message: str):
         """Renders an error modal/popup to the user."""
         ...
-
+    def reset_ui_state(self):
+        ...
     def start(self):
         """Starts the main UI event loop."""
         ...
@@ -62,11 +63,11 @@ class GamePresenter:
 
     def get_next_player(self) -> PlayerModel:
         """Advances the internal turn index and returns the player whose turn is next."""
-        next_index = self.get_next_index()
+        next_index = self.get_next_turn()
         self.game_model.current_index = next_index
         return self.game_model.players[self.game_model.current_index]
 
-    def get_next_index(self) -> int:
+    def get_next_turn(self) -> int:
         """Calculates the next player's index using modulo arithmetic for circular looping."""
         return  (self.game_model.current_index + 1) % len(self.game_model.players)
 
@@ -126,13 +127,8 @@ class GamePresenter:
             self.view.display_error_popup(label, msg)
 
         else:
-            # First player gets set at turn 0, subsequent players use get_next_player()
-            if self.game_model.screen_turn == 0:
-                self.game_model.current_player = self.game_model.players[0]
-                self.game_model.current_player.set_name(name)
-            else:
-                self.game_model.current_player = self.get_next_player()
-                self.game_model.current_player.set_name(name)
+            self.game_model.current_player = self.get_next_player()
+            self.game_model.current_player.set_name(name)
 
             # Advance the setup turn counter
             self.game_model.screen_turn += 1
@@ -232,7 +228,7 @@ class GamePresenter:
             valid_guess = self.Logic.parse_code_as_list(guess)
 
             player = self.game_model.current_player
-            opponent = self.game_model.players[self.get_next_index()]
+            opponent = self.game_model.players[self.get_next_turn()]
 
             # Update the current player's state tracking
             player.update_guess(valid_guess)
@@ -300,9 +296,6 @@ class GamePresenter:
         self.view.render_new_screen(vm)
 
 
-    def play_again_sequence(self):
-        """Stub for future implementation of wiping state and restarting the game."""
-        pass
 
     def guess_again_sequence(self):
         """Transitions from the inter-turn Stats Screen back to the main Guessing Screen for the next turn."""
@@ -310,4 +303,22 @@ class GamePresenter:
         self.game_model.current_player = self.get_next_player()
         detail = StatDetails(self.game_model.current_player)
         vm = AppViewModel(GameScreen.GUESS_ENTRY, detail)
+        self.view.render_new_screen(vm)
+
+    def reset_master_stats(self):
+        self.base_game_player = PlayerModel()
+        self.base_game_player.set_name('GAME-STATS')
+        self.master_stats = StatDetails(self.base_game_player)
+
+    def reset_sequence(self):
+        #resets the main game data for the models
+        self.game_model.reset_data()
+
+        # reset the master stats
+        self.reset_master_stats()
+
+        #resets the data for the ui
+        self.view.reset_ui_state()
+
+        vm = AppViewModel(self.game_model.current_screen)
         self.view.render_new_screen(vm)

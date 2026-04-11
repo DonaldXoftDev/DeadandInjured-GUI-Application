@@ -8,3 +8,4 @@ class StatDetails:
         self.sub_stats: list['StatDetails'] = []
         self.player_guess_count: int = turn.guess_count
         self.feedback_history: list[str] = turn.feedback_history
+

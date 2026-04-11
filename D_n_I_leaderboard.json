@@ -23,5 +23,20 @@
         "winner": "tina",
         "loser": "donald",
         "winner_guess_count": 3
+    },
+    "donald:jake": {
+        "winner": "donald",
+        "loser": "jake",
+        "winner_guess_count": 2
+    },
+    "matilda:dotty": {
+        "winner": "matilda",
+        "loser": "dotty",
+        "winner_guess_count": 3
+    },
+    "donald:killua": {
+        "winner": "donald",
+        "loser": "killua",
+        "winner_guess_count": 1
     }
 }

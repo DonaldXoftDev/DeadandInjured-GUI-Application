@@ -41,6 +41,9 @@ class PresenterProtocol(Protocol):
     def leaderboard_sequence(self) :
         ...
 
+    def reset_sequence(self):
+        ...
+
 
 class GameView:
     """
@@ -50,6 +53,7 @@ class GameView:
 
     def __init__(self, model: MainGameModel, presenter: PresenterProtocol = None):
         # Initialize the main window with a ttkbootstrap theme
+        self.new_name_label_frame = None
         self.window = ttk.Window(themename='superhero')
         self.window.title('DEAD INJURED GUI')
         self.window.grid(baseWidth=10, baseHeight=10, widthInc=10, heightInc=10)
@@ -255,7 +259,9 @@ class GameView:
         """Enables the given button if the mode variable has a value."""
         if mode_vr.get():
             btn.configure(state='enabled')
-            # self.controller.create_players(mode_var.get())
+        else:
+            btn.configure(state='disabled')
+
 
 
     def setup_screen(self) -> ttk.Frame:
@@ -545,7 +551,7 @@ class GameView:
             frame,
             text='PLAY AGAIN',
             bootstyle = 'success-outline',
-            command= lambda: self.presenter.leaderboard_sequence() if self.presenter else None
+            command= lambda: self.play_again_clicked() if self.presenter else None
         )
         play_again_btn.grid(row=0, column=1, padx=10, sticky='n')
 
@@ -678,6 +684,7 @@ class GameView:
 
             self.table.insert('', 'end', values=(rank, champion_name, loser_name, guesses))
 
+
     # -----------------------------------------------------
     # Methods callable by the Presenter to control the View
     # -----------------------------------------------------
@@ -698,8 +705,12 @@ class GameView:
         self.pin_frame.grid_forget()
         self.stats_frame.grid_forget()
         self.game_over_frame.grid_forget()
+        self.leaderboard_frame.grid_forget()
 
-        if vm.screen  == GameScreen.NAME_SETUP:
+        if vm.screen == GameScreen.MODE_SELECT:
+            self.home_frame.grid(row=0, column=0, sticky='nsew')
+
+        elif vm.screen  == GameScreen.NAME_SETUP:
             self.update_name_setup_index()
             self.setup_frame.grid(row=0, column=0, sticky='nsew')
             self.window.update_idletasks()
@@ -780,8 +791,8 @@ class GameView:
 
         l_frames = []
         for i in range(len(sub_stats)):
-            name_label_frame = NameLabel(self.stats_inner_frame, sub_stats[i])
-            l_frames.append(name_label_frame)
+            self.new_name_label_frame = NameLabel(self.stats_inner_frame, sub_stats[i])
+            l_frames.append(self.new_name_label_frame)
 
         if len(l_frames) > 1:
             for i, label in enumerate(l_frames):
@@ -797,6 +808,33 @@ class GameView:
     def mode_selected(self):
         """Triggered when 'PLAY GAME' is clicked; notifies Presenter of mode choice."""
         self.presenter.create_player_sequence(self.player_mode.get())
+
+    def reset_ui_state(self):
+        # 1. Reset the dropdown variable correctly using .set()
+        if isinstance(self.player_mode, tk.StringVar):
+            self.player_mode.set('')
+
+        # 2. Reset the player index counter
+        self.ui_player_index = 0
+
+        # 3. Physically destroy old stat frames from the previous game
+        if self.stats_inner_frame:
+            for widget in self.stats_inner_frame.winfo_children():
+                # We only want to destroy the player stat frames (which you put in row 2)
+                # We don't want to destroy the "STATS" title or the separator!
+                grid_info = widget.grid_info()
+                if grid_info and grid_info.get('row') == 2:
+                    widget.destroy()
+
+        # 4. Clear out the old guess variables so they don't pop up again
+        for entry_var in self.pin_var:
+            entry_var.set('')
+        for entry_var in self.guess_var:
+            entry_var.set('')
+
+        self.table.delete(*self.table.get_children())
+
+
 
     def name_entered(self):
         """Triggered when a name is submitted; reads the name and forwards to Presenter."""
@@ -829,7 +867,7 @@ class GameView:
         self.presenter.guess_again_sequence()
 
     def play_again_clicked(self):
-        pass
+        self.presenter.reset_sequence()
 
 
 # Code for isolated UI testing:
