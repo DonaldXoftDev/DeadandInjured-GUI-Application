@@ -38,5 +38,10 @@
         "winner": "donald",
         "loser": "killua",
         "winner_guess_count": 1
+    },
+    "joey:donald": {
+        "winner": "joey",
+        "loser": "donald",
+        "winner_guess_count": 4
     }
 }

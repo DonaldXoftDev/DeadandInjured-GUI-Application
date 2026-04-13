@@ -48,9 +48,11 @@ class GamePresenter:
         """
         Initializes the presenter with its required dependencies.
         """
+        self.mode = None
         self.view = view
         self.Logic = logic
         self.game_model = game_model
+        self.max_screen_turn = 2
         
         # Base player object used solely to aggregate and display global match statistics
         self.base_game_player = PlayerModel()
@@ -80,14 +82,18 @@ class GamePresenter:
         Returns:
             bool: True indicating successful creation.
         """
-        if mode.lower() == 'h_vs_c':
+        self.mode = mode
+        if self.mode.lower() == 'h_vs_c':
             computer = ComputerPlayer()
             computer.set_as_comp()
             human_player = PlayerModel()
             self.game_model.players.clear()
             self.game_model.players = [human_player, computer]
-        else:
+
+        elif self.mode.lower() == 'h_vs_h':
             self.game_model.players = [PlayerModel() for _ in range(2)]
+        else:
+            print('Something went wrong while creating players')
 
         return True
 
@@ -99,13 +105,27 @@ class GamePresenter:
         Args:
             mode (str): The chosen game mode.
         """
-        if self.create_players(mode):
+        self.mode = mode
+        if self.create_players(self.mode):
             self.game_model.current_screen = GameScreen.NAME_SETUP
             vm = AppViewModel(GameScreen.NAME_SETUP)
             self.view.render_new_screen(vm)
-        else:
-            pass
 
+    def validate_and_store_name(self,name):
+        label = 'NAME'
+        if not name:
+            print('NO name is stored')
+            msg = 'The name cannot be empty.'
+            self.view.display_error_popup(label, msg)
+
+        elif len(name) < 2:
+            msg = 'The player name is too short'
+            self.view.display_error_popup(label, msg)
+
+        else:
+            self.game_model.current_player = self.get_next_player()
+            self.game_model.current_player.set_name(name)
+            print(type(self.game_model.current_player))
 
     def store_name_sequence(self, name: str):
         """
@@ -116,25 +136,13 @@ class GamePresenter:
         Args:
             name (str): The submitted player name.
         """
-        label = 'NAME'
-        if not name:
-            print('NO name is stored')
-            msg = 'The name cannot be empty.'
-            self.view.display_error_popup(label,msg)
+        if self.mode.lower() == 'h_vs_h':
+            self.validate_and_store_name(name)
 
-        elif len(name) < 2:
-            msg = 'The player name is too short'
-            self.view.display_error_popup(label, msg)
-
-        else:
-            self.game_model.current_player = self.get_next_player()
-            self.game_model.current_player.set_name(name)
-
-            # Advance the setup turn counter
             self.game_model.screen_turn += 1
 
             # If there are more human players left to name, reload Name Setup
-            if self.game_model.screen_turn < len(self.game_model.players) and all(p.is_human for p in self.game_model.players):
+            if self.game_model.screen_turn != self.max_screen_turn:
                 self.game_model.current_screen = GameScreen.NAME_SETUP
                 vm = AppViewModel(GameScreen.NAME_SETUP)
                 self.view.render_new_screen(vm)
@@ -142,13 +150,16 @@ class GamePresenter:
             else:
                 # Setup complete. Reset turn counter and proceed to PIN setup phase
                 self.game_model.screen_turn = 0
-                self.game_model.current_screen = GameScreen.PIN_ENTRY
                 self.game_model.current_player = self.get_next_player()
-                detail = StatDetails(self.game_model.current_player)
-                vm = AppViewModel(GameScreen.PIN_ENTRY, detail)
-                self.view.render_new_screen(vm)
+        else:
+            self.validate_and_store_name(name)
 
-    def poss_input_error(self, digits: str, label: str) -> bool:
+        self.game_model.current_screen = GameScreen.PIN_ENTRY
+        detail = StatDetails(self.game_model.current_player)
+        vm = AppViewModel(GameScreen.PIN_ENTRY, detail)
+        self.view.render_new_screen(vm)
+
+    def validate_and_store_digits(self, digits: str, label: str):
         """
         Validates numeric code strings for standard rules (PINs and Guesses).
         Displays a tailored error popup if constraints are violated.
@@ -162,20 +173,20 @@ class GamePresenter:
         if not digits:
             msg = f'The {label} cannot be empty.'
             self.view.display_error_popup(label, msg)
-            return True
+
 
         elif not self.Logic.is_unique(digits):
             msg = f'The {label} must be 4 digits and unique.'
             self.view.display_error_popup(label, msg)
-            return True
+
 
         elif not self.Logic.is_all_digit(digits):
             msg = f'The {label} has to be all digits.'
             self.view.display_error_popup(label, msg)
-            return True
-            
-        return False
 
+        else:
+            valid_pin = self.Logic.parse_code_as_list(digits)
+            self.game_model.current_player.update_pin(valid_pin)
 
     def pin_submitted_sequence(self, pin: str):
         """
@@ -187,14 +198,13 @@ class GamePresenter:
         label= 'PIN'
 
         # Proceed only if the input passes all validation checks
-        if not self.poss_input_error(pin, label):
-            valid_pin = self.Logic.parse_code_as_list(pin)
-            self.game_model.current_player.update_pin(valid_pin)
+        if self.mode == 'h_vs_h':
+            self.validate_and_store_digits(digits=pin, label=label)
 
             self.game_model.screen_turn += 1
 
             # Check if there are still human players needing to set a PIN
-            if self.game_model.screen_turn < len(self.game_model.players) and all(p.is_human for p in self.game_model.players):
+            if self.max_screen_turn != 2:
                 self.game_model.current_screen = GameScreen.PIN_ENTRY
                 self.game_model.current_player = self.get_next_player()
                 detail = StatDetails(self.game_model.current_player)
@@ -203,11 +213,20 @@ class GamePresenter:
             else:
                 # Setup phase entirely complete, initiate main guessing loop
                 self.game_model.screen_turn = 0
-                self.game_model.current_screen = GameScreen.GUESS_ENTRY
                 self.game_model.current_player = self.get_next_player()
-                detail = StatDetails(self.game_model.current_player)
-                vm = AppViewModel(GameScreen.GUESS_ENTRY, detail)
-                self.view.render_new_screen(vm)
+        else:
+            #tell the view to render the comp screen saying that it has chosen it's pin and after 3s remove it
+            computer = self.game_model.players[self.get_next_turn()]
+            if isinstance(computer, ComputerPlayer):
+                computer.computer_pin()
+            else:
+                self.validate_and_store_digits(digits=pin, label=label)
+
+
+        self.game_model.current_screen = GameScreen.GUESS_ENTRY
+        detail = StatDetails(self.game_model.current_player)
+        vm = AppViewModel(GameScreen.GUESS_ENTRY, detail)
+        self.view.render_new_screen(vm)
 
 
     def guess_submitted_sequence(self, guess: str):
@@ -221,7 +240,7 @@ class GamePresenter:
         label = 'GUESS'
         
         # Do nothing if the validation flags an error
-        if  self.poss_input_error(guess, label):
+        if  self.validate_and_store_digits(guess, label):
             pass
         else:
             # Parse the input into a usable integer list
@@ -229,13 +248,18 @@ class GamePresenter:
 
             player = self.game_model.current_player
             opponent = self.game_model.players[self.get_next_turn()]
+            print(player.guess , opponent.pin)
+            print(player.pin)
+
 
             # Update the current player's state tracking
             player.update_guess(valid_guess)
             player.increment_guess_count()
+            print(player.name, opponent.name)
 
             # Execute core rules engine: Evaluate guess vs opponent's PIN
             feedback_data = self.Logic.compare_pin_to_guess(player, opponent)
+            print(feedback_data)
 
             # If it's a computer turn, allow it to filter its internal logic branches
             if not player.is_human:

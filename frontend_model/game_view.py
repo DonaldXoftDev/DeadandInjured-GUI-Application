@@ -242,11 +242,19 @@ class GameView:
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=20, sticky='ew')
 
-        exit_game_btn = ttk.Button(btn_frame, text='Exit', bootstyle='danger-outline')
+        exit_game_btn = ttk.Button(
+            btn_frame,
+            text='Exit',
+            bootstyle='danger-outline',
+            command= self.window.destroy,
+        )
         exit_game_btn.pack(side='left', padx=10)
 
-        play_again_btn = ttk.Button(btn_frame, text='Play Again', bootstyle='success-outline',
-                                    command=self.play_again_clicked)
+        play_again_btn = ttk.Button(
+            btn_frame, text='Play Again',
+            bootstyle='success-outline',
+            command=self.play_again_clicked
+        )
         play_again_btn.pack(side='right', padx=10)
 
         # Allow the self.table row to expand if the window is resized
@@ -461,7 +469,23 @@ class GameView:
 
     def comp_screen(self):
         """Placeholder for the 'Computer thinking/loading' screen layout."""
-        ...
+        frame = ttk.Frame(self.window, )
+
+        comp_title_label = ttk.Label(
+            frame,
+            text='COMPUTER SCREEN',
+            font=('Inter', 32, 'bold'),
+            padding=(130, 0)
+        )
+        comp_title_label.grid(row=0, column=1, columnspan=2, padx=10, pady=10)
+
+        horiz_rule = ttk.Separator(orient='horizontal')
+        horiz_rule.grid(row=1, column=0, columnspan=2, sticky='ew', padx=10, pady=10)
+
+        self.comp_inner_frame = ttk.Frame(frame)
+        self.comp_inner_frame.grid(row=2, column=0, padx=10, pady=10)
+
+        return frame
 
     def game_over_screen(self):
         """Builds and returns the Game Over Screen to show final results."""
@@ -558,7 +582,8 @@ class GameView:
         exit_btn = ttk.Button(
             frame,
             text='Exit',
-            bootstyle = 'danger-link'
+            bootstyle = 'danger-link',
+            command= self.window.destroy
         )
         exit_btn.grid(row=0, column=2, padx=10, sticky='e')
 
@@ -833,7 +858,6 @@ class GameView:
             entry_var.set('')
 
         self.table.delete(*self.table.get_children())
-
 
 
     def name_entered(self):

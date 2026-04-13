@@ -1,9 +1,10 @@
+from backend_models.computer_player import ComputerPlayer
 from backend_models.player_model import PlayerModel
 from backend_models.game_screen_model import GameScreen
 
 class MainGameModel:
     def __init__(self):
-        self.players: list[PlayerModel] = []
+        self.players: list[PlayerModel] | list[ComputerPlayer] = []
         self.current_screen: GameScreen = GameScreen.MODE_SELECT
         self.current_index: int = -1
         self.screen_turn: int = 0

@@ -5,7 +5,8 @@ from itertools import permutations
 
 class ComputerPlayer(PlayerModel):
     def __init__(self):
-        super().__init__(name='Computer')
+        super().__init__()
+        self.set_name('Computer')
         self.possible_pin_list = [list(item) for item in permutations(range(0, 10), 4)]
         self.is_human = self.set_as_comp()
 
