@@ -43,5 +43,10 @@
         "winner": "joey",
         "loser": "donald",
         "winner_guess_count": 4
+    },
+    "miguel:computer": {
+        "winner": "miguel",
+        "loser": "Computer",
+        "winner_guess_count": 2
     }
 }

@@ -28,10 +28,15 @@ class ViewProtocol(Protocol):
     def display_error_popup(self,label: str, message: str):
         """Renders an error modal/popup to the user."""
         ...
+
     def reset_ui_state(self):
         ...
+
     def start(self):
         """Starts the main UI event loop."""
+        ...
+
+    def start_computer_turn_animation(self):
         ...
 
 
@@ -127,6 +132,7 @@ class GamePresenter:
             self.game_model.current_player.set_name(name)
             print(type(self.game_model.current_player))
 
+
     def store_name_sequence(self, name: str):
         """
         Validates and registers a player's name.
@@ -159,7 +165,8 @@ class GamePresenter:
         vm = AppViewModel(GameScreen.PIN_ENTRY, detail)
         self.view.render_new_screen(vm)
 
-    def validate_and_store_digits(self, digits: str, label: str):
+
+    def validate_digits(self, digits: str, label: str):
         """
         Validates numeric code strings for standard rules (PINs and Guesses).
         Displays a tailored error popup if constraints are violated.
@@ -184,9 +191,6 @@ class GamePresenter:
             msg = f'The {label} has to be all digits.'
             self.view.display_error_popup(label, msg)
 
-        else:
-            valid_pin = self.Logic.parse_code_as_list(digits)
-            self.game_model.current_player.update_pin(valid_pin)
 
     def pin_submitted_sequence(self, pin: str):
         """
@@ -199,7 +203,9 @@ class GamePresenter:
 
         # Proceed only if the input passes all validation checks
         if self.mode == 'h_vs_h':
-            self.validate_and_store_digits(digits=pin, label=label)
+            self.validate_digits(digits=pin, label=label)
+            valid_digits = self.Logic.parse_code_as_list(pin)
+            self.game_model.current_player.update_pin(valid_digits)
 
             self.game_model.screen_turn += 1
 
@@ -219,8 +225,12 @@ class GamePresenter:
             computer = self.game_model.players[self.get_next_turn()]
             if isinstance(computer, ComputerPlayer):
                 computer.computer_pin()
-            else:
-                self.validate_and_store_digits(digits=pin, label=label)
+
+            self.validate_digits(digits=pin, label=label)
+            valid_digits = self.Logic.parse_code_as_list(pin)
+            print(valid_digits)
+            print(type(self.game_model.current_player))
+            self.game_model.current_player.update_pin(valid_digits)
 
 
         self.game_model.current_screen = GameScreen.GUESS_ENTRY
@@ -240,7 +250,7 @@ class GamePresenter:
         label = 'GUESS'
         
         # Do nothing if the validation flags an error
-        if  self.validate_and_store_digits(guess, label):
+        if  self.validate_digits(guess, label):
             pass
         else:
             # Parse the input into a usable integer list
@@ -248,14 +258,14 @@ class GamePresenter:
 
             player = self.game_model.current_player
             opponent = self.game_model.players[self.get_next_turn()]
-            print(player.guess , opponent.pin)
-            print(player.pin)
 
 
             # Update the current player's state tracking
             player.update_guess(valid_guess)
             player.increment_guess_count()
             print(player.name, opponent.name)
+            print(player.guess, opponent.pin)
+            print(player.pin)
 
             # Execute core rules engine: Evaluate guess vs opponent's PIN
             feedback_data = self.Logic.compare_pin_to_guess(player, opponent)
@@ -321,13 +331,36 @@ class GamePresenter:
 
 
 
+
     def guess_again_sequence(self):
-        """Transitions from the inter-turn Stats Screen back to the main Guessing Screen for the next turn."""
+        """Transitions from the inter-turn Stats Screen back to the main Guessing Screen."""
         self.game_model.current_screen = GameScreen.GUESS_ENTRY
-        self.game_model.current_player = self.get_next_player()
-        detail = StatDetails(self.game_model.current_player)
+        player = self.get_next_player()
+        self.game_model.current_player = player
+
+
+        # If it is the computer, we trigger a dedicated method to handle its logic
+        if isinstance(player, ComputerPlayer):
+            # Tell the view to start the 1.5 second animation
+            # When the animation is done, the View will call presenter.execute_computer_turn()
+            self.view.start_computer_turn_animation()
+
+        detail = StatDetails(player)
         vm = AppViewModel(GameScreen.GUESS_ENTRY, detail)
         self.view.render_new_screen(vm)
+
+    def execute_computer_turn(self):
+        """Called by the View after the 1.5 second 'thinking' delay finishes."""
+        computer = self.game_model.current_player
+
+        # Get the guess (Assuming it returns a list like [1, 2, 3, 4])
+        comp_guess_list = computer.computer_guess()
+
+        # Convert it to a string so it perfectly mimics a human typing it in
+        comp_guess_str = "".join(map(str, comp_guess_list))
+
+        # Now, push it through the exact same pipeline as a human guess!
+        self.guess_submitted_sequence(comp_guess_str)
 
     def reset_master_stats(self):
         self.base_game_player = PlayerModel()

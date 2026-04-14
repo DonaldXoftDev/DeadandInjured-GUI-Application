@@ -44,6 +44,9 @@ class PresenterProtocol(Protocol):
     def reset_sequence(self):
         ...
 
+    def execute_computer_turn(self):
+        ...
+
 
 class GameView:
     """
@@ -486,6 +489,14 @@ class GameView:
         self.comp_inner_frame.grid(row=2, column=0, padx=10, pady=10)
 
         return frame
+
+    def start_computer_turn_animation(self):
+        # does the 1.5s animation of a gif loader
+        # 3. Schedule the guess!
+        self._pending_computer_turn_id = self.window.after(
+            1500,
+            lambda: self.presenter.execute_computer_turn() if self.presenter else None
+        )
 
     def game_over_screen(self):
         """Builds and returns the Game Over Screen to show final results."""
